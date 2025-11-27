@@ -19,13 +19,13 @@ export default function Home() {
               </Link>
               <div className="hidden md:flex flex-1 justify-end gap-8">
                 <div className="flex items-center gap-9">
-                  <a className="text-text-light/80 hover:text-text-light transition-colors text-sm font-medium leading-normal" href="#features">Features</a>
-                  <a className="text-text-light/80 hover:text-text-light transition-colors text-sm font-medium leading-normal" href="#testimonials">Testimonials</a>
-                  <a className="text-text-light/80 hover:text-text-light transition-colors text-sm font-medium leading-normal" href="#pricing">Pricing</a>
-                  <a className="text-text-light/80 hover:text-text-light transition-colors text-sm font-medium leading-normal" href="#">Docs</a>
+                  <a className="text-text-light/80 hover:text-text-light transition-colors text-sm font-medium leading-normal no-underline" href="#features">Features</a>
+                  <a className="text-text-light/80 hover:text-text-light transition-colors text-sm font-medium leading-normal no-underline" href="#testimonials">Testimonials</a>
+                  <a className="text-text-light/80 hover:text-text-light transition-colors text-sm font-medium leading-normal no-underline" href="#pricing">Pricing</a>
+                  <a className="text-text-light/80 hover:text-text-light transition-colors text-sm font-medium leading-normal no-underline" href="#">Docs</a>
                 </div>
-                <Button asChild className="min-w-[84px] max-w-[480px] h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90">
-                  <Link href="/pricing">
+                <Button asChild className="min-w-[84px] max-w-[480px] h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 no-underline">
+                  <Link href="/pricing" className="no-underline">
                     <span className="truncate">Get Started</span>
                   </Link>
                 </Button>
@@ -47,13 +47,13 @@ export default function Home() {
                       </h2>
                     </div>
                     <div className="flex-wrap gap-4 flex justify-center">
-                      <Button asChild className="min-w-[84px] max-w-[480px] h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90">
-                        <Link href="/pricing">
+                      <Button asChild className="min-w-[84px] max-w-[480px] h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 no-underline">
+                        <Link href="/pricing" className="no-underline">
                           <span className="truncate">Get Started Now</span>
                         </Link>
                       </Button>
-                      <Button asChild variant="outline" className="min-w-[84px] max-w-[480px] h-12 px-5 bg-black/[.08] text-text-light text-base font-bold leading-normal tracking-[0.015em] hover:bg-black/10 border-0">
-                        <Link href="/dashboard">
+                      <Button asChild variant="outline" className="min-w-[84px] max-w-[480px] h-12 px-5 bg-black/[.08] text-text-light text-base font-bold leading-normal tracking-[0.015em] hover:bg-black/10 border-0 no-underline">
+                        <Link href="/dashboard" className="no-underline">
                           <span className="truncate">View Demo</span>
                         </Link>
                       </Button>

@@ -87,6 +87,16 @@
     color: inherit;
   }
   
+  /* Remove default link underlines, but allow explicit underline classes */
+  a {
+    text-decoration: none;
+  }
+  
+  /* Allow hover underline for links that should have it */
+  a.hover-underline:hover {
+    text-decoration: underline;
+  }
+  
   .material-symbols-outlined {
     font-variation-settings:
     'FILL' 0,
