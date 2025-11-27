@@ -1,0 +1,102 @@
+PROMPT START
+
+Create the following pages in a Next.js (App Router) project:
+
+📁 Pages to Generate
+1. /pricing
+
+A pricing page that displays 5 plans:
+
+Free — $0
+
+Basic — $20
+
+Pro — $40
+
+Business — $100
+
+Enterprise — Custom (contact link)
+
+Each plan should have a button that links to a placeholder Creem.io checkout link like:
+
+# Example placeholder
+https://creem.io/checkout/{plan-id}
+
+
+For now, hard-code example URLs like:
+
+/api/checkout/free
+/api/checkout/basic
+/api/checkout/pro
+/api/checkout/business
+/contact
+
+
+Use a clean modern layout with minimal styling (Tailwind preferred).
+
+2. /success
+
+A simple success page showing:
+
+"Payment Successful"
+
+plan from URL query (e.g., /success?plan=basic)
+
+Button back to /dashboard or /pricing.
+
+3. /cancel
+
+A simple cancellation page showing:
+
+"Payment Canceled"
+
+Retry button back to /pricing.
+
+4. /contact
+
+A minimal contact page with:
+
+“Enterprise Pricing Request”
+
+A form: name, email, company, message
+
+No backend required — just log form values to console.
+
+5. API Routes (Optional placeholder)
+
+Create placeholder API routes:
+
+/api/checkout/free
+/api/checkout/basic
+/api/checkout/pro
+/api/checkout/business
+
+
+Each route should:
+
+Accept GET
+
+Return a JSON object like:
+
+{
+  url: "https://creem.io/checkout/test-link"
+}
+
+
+(Just placeholders — no real payment logic.)
+
+📦 Requirements
+
+Use Next.js App Router
+
+Use TypeScript
+
+Use Tailwind CSS
+
+Keep styling minimal and clean
+
+Use functional components only
+
+Export default components
+
+PROMPT END
