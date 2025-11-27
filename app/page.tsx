@@ -9,7 +9,7 @@ export default function Home() {
           <div className="layout-content-container flex flex-col max-w-[960px] flex-1">
             {/* Header */}
             <header className="flex items-center justify-between whitespace-nowrap border-b border-solid border-black/10 px-10 py-3">
-              <Link href="/dashboard" className="flex items-center gap-4 text-text-light hover:opacity-80 transition-opacity">
+              <Link href="/" className="flex items-center gap-4 text-text-light hover:opacity-80 transition-opacity">
                 <div className="size-6 text-primary">
                   <svg fill="currentColor" viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg">
                     <path d="M42.4379 44C42.4379 44 36.0744 33.9038 41.1692 24C46.8624 12.9336 42.2078 4 42.2078 4L7.01134 4C7.01134 4 11.6577 12.932 5.96912 23.9969C0.876273 33.9029 7.27094 44 7.27094 44L42.4379 44Z"></path>
@@ -25,7 +25,7 @@ export default function Home() {
                   <a className="text-text-light/80 hover:text-text-light transition-colors text-sm font-medium leading-normal" href="#">Docs</a>
                 </div>
                 <Button asChild className="min-w-[84px] max-w-[480px] h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90">
-                  <Link href="/dashboard">
+                  <Link href="/pricing">
                     <span className="truncate">Get Started</span>
                   </Link>
                 </Button>
@@ -48,7 +48,7 @@ export default function Home() {
                     </div>
                     <div className="flex-wrap gap-4 flex justify-center">
                       <Button asChild className="min-w-[84px] max-w-[480px] h-12 px-5 bg-primary text-white text-base font-bold leading-normal tracking-[0.015em] hover:bg-primary/90">
-                        <Link href="/dashboard">
+                        <Link href="/pricing">
                           <span className="truncate">Get Started Now</span>
                         </Link>
                       </Button>
