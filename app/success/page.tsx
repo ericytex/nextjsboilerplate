@@ -1,11 +1,12 @@
 'use client'
 
 import Link from 'next/link'
-import { useSearchParams } from 'next/navigation'
+import { useSearchParams, useRouter } from 'next/navigation'
 import { useEffect, Suspense } from 'react'
 
 function SuccessContent() {
   const searchParams = useSearchParams()
+  const router = useRouter()
   const plan = searchParams.get('plan') || 'unknown'
   const isFree = plan === 'free'
 
@@ -22,6 +23,15 @@ function SuccessContent() {
     }
   }, [isFree])
 
+  // Automatically redirect to dashboard after 3 seconds
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      router.push('/dashboard')
+    }, 3000) // 3 second delay
+
+    return () => clearTimeout(timer)
+  }, [router])
+
   return (
     <main className="min-h-screen p-8 flex items-center justify-center">
       <div className="max-w-md mx-auto text-center">
@@ -36,18 +46,15 @@ function SuccessContent() {
             Your free plan is active. We're covering the cost for you!
           </p>
         )}
+        <p className="text-sm text-gray-500 mb-6">
+          Redirecting to your dashboard in a few seconds...
+        </p>
         <div className="mt-8 space-x-4">
           <Link
             href="/dashboard"
             className="inline-block px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition"
           >
-            Go to Dashboard
-          </Link>
-          <Link
-            href="/pricing"
-            className="inline-block px-6 py-3 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition"
-          >
-            Back to Pricing
+            Go to Dashboard Now
           </Link>
         </div>
       </div>
