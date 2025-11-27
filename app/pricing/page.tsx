@@ -49,14 +49,26 @@ export default function PricingPage() {
       return
     }
 
+    // Free plan - skip checkout, go directly to success
+    if (planId === 'free') {
+      router.push(`/success?plan=free`)
+      return
+    }
+
     try {
       const response = await fetch(checkoutUrl)
       const data = await response.json()
       if (data.url) {
+        // Check if it's a placeholder URL
+        if (data.url.includes('test-link') || data.url.includes('placeholder')) {
+          alert('Checkout is not configured yet. Please update the API routes with your actual Creem.io checkout URLs.')
+          return
+        }
         window.location.href = data.url
       }
     } catch (error) {
       console.error('Checkout error:', error)
+      alert('Error initiating checkout. Please try again.')
     }
   }
 

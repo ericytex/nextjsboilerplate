@@ -8,7 +8,7 @@ export async function GET() {
   const baseUrl = `${protocol}://${host}`
 
   return NextResponse.json({
-    url: 'https://creem.io/checkout/test-link-basic',
+    url: process.env.CREEM_CHECKOUT_BASIC || 'https://creem.io/checkout/test-link-basic',
     success_url: `${baseUrl}/success?plan=basic`,
     cancel_url: `${baseUrl}/cancel`,
   })
