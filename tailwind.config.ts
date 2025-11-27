@@ -22,8 +22,12 @@ const config: Config = {
   			ring: 'hsl(var(--ring))',
   			background: 'hsl(var(--background))',
   			foreground: 'hsl(var(--foreground))',
+  			'background-light': 'hsl(var(--background-light))',
+  			'background-dark': 'hsl(var(--background-dark))',
+  			'text-light': 'hsl(var(--text-light))',
+  			'text-light-secondary': 'hsl(var(--text-light-secondary))',
   			primary: {
-  				DEFAULT: 'hsl(var(--primary))',
+  				DEFAULT: '#0d7ff2',
   				foreground: 'hsl(var(--primary-foreground))'
   			},
   			secondary: {
@@ -62,9 +66,13 @@ const config: Config = {
   			}
   		},
   		borderRadius: {
-  			lg: 'var(--radius)',
-  			md: 'calc(var(--radius) - 2px)',
-  			sm: 'calc(var(--radius) - 4px)'
+  			DEFAULT: '0.25rem',
+  			lg: '0.5rem',
+  			xl: '0.75rem',
+  			full: '9999px'
+  		},
+  		fontFamily: {
+  			display: ['var(--font-manrope)', 'sans-serif']
   		},
   		keyframes: {
   			'accordion-down': {
