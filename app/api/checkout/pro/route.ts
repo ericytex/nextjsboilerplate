@@ -10,8 +10,25 @@ export async function GET() {
     || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
     || (process.env.NODE_ENV === 'production' ? `https://${host}` : `http://${host}`)
 
+  const checkoutUrl = process.env.CREEM_CHECKOUT_PRO
+
+  // Validate that checkout URL is set and not a placeholder
+  if (!checkoutUrl || 
+      checkoutUrl.includes('test-link') || 
+      checkoutUrl.includes('placeholder') ||
+      checkoutUrl.includes('your-actual') ||
+      checkoutUrl.includes('your-')) {
+    return NextResponse.json(
+      { 
+        error: 'Checkout URL not configured. Please set CREEM_CHECKOUT_PRO environment variable in Vercel.',
+        url: null 
+      },
+      { status: 500 }
+    )
+  }
+
   return NextResponse.json({
-    url: process.env.CREEM_CHECKOUT_PRO || 'https://creem.io/checkout/test-link-pro',
+    url: checkoutUrl,
     success_url: `${baseUrl}/success?plan=pro`,
     cancel_url: `${baseUrl}/cancel`,
   })

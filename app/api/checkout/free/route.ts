@@ -10,8 +10,9 @@ export async function GET() {
     || (process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : null)
     || (process.env.NODE_ENV === 'production' ? `https://${host}` : `http://${host}`)
 
+  // Free plan doesn't need checkout URL, but we return success/cancel URLs
   return NextResponse.json({
-    url: process.env.CREEM_CHECKOUT_FREE || 'https://creem.io/checkout/test-link-free',
+    url: null, // Free plan skips checkout
     success_url: `${baseUrl}/success?plan=free`,
     cancel_url: `${baseUrl}/cancel`,
   })

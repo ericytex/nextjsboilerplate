@@ -58,14 +58,34 @@ export default function PricingPage() {
     try {
       const response = await fetch(checkoutUrl)
       const data = await response.json()
-      if (data.url) {
-        // Check if it's a placeholder URL
-        if (data.url.includes('test-link') || data.url.includes('placeholder')) {
-          alert('Checkout is not configured yet. Please update the API routes with your actual Creem.io checkout URLs.')
-          return
-        }
-        window.location.href = data.url
+      
+      // Check for errors from API
+      if (data.error || !data.url) {
+        alert(data.error || 'Checkout URL is not configured. Please set the environment variable in Vercel.')
+        return
       }
+      
+      // Validate URL is not a placeholder
+      const placeholderPatterns = [
+        'test-link',
+        'placeholder',
+        'your-actual',
+        'your-',
+        'example',
+        'demo'
+      ]
+      
+      const isPlaceholder = placeholderPatterns.some(pattern => 
+        data.url.toLowerCase().includes(pattern)
+      )
+      
+      if (isPlaceholder) {
+        alert('Checkout URL appears to be a placeholder. Please set the actual Creem.io checkout URL in Vercel environment variables.')
+        return
+      }
+      
+      // Redirect to checkout
+      window.location.href = data.url
     } catch (error) {
       console.error('Checkout error:', error)
       alert('Error initiating checkout. Please try again.')
