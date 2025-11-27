@@ -84,9 +84,14 @@ export default function PricingPage() {
               className="bg-white rounded-lg shadow-md p-6 border border-gray-200 flex flex-col"
             >
               <h2 className="text-2xl font-semibold mb-2">{plan.name}</h2>
-              <div className="text-3xl font-bold mb-6 text-gray-900">
+              <div className="text-3xl font-bold mb-2 text-gray-900">
                 {plan.price}
               </div>
+              {plan.id === 'free' && (
+                <p className="text-sm text-gray-500 mb-4 italic">
+                  Free for you, we cover the cost
+                </p>
+              )}
               <button
                 onClick={() => handleCheckout(plan.id, plan.checkoutUrl)}
                 className="mt-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center w-full"
