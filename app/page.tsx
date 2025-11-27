@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button"
 
 export default function Home() {
   return (
-    <div className="relative flex min-h-screen w-full flex-col bg-[#f5f7f8] group/design-root overflow-x-hidden">
+    <div className="relative flex min-h-screen w-full flex-col bg-background-light group/design-root overflow-x-hidden">
       <div className="layout-container flex h-full grow flex-col">
         <div className="flex flex-1 justify-center py-5">
           <div className="layout-content-container flex flex-col max-w-[960px] flex-1">

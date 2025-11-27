@@ -26,8 +26,8 @@
     --radius: 0.25rem;
     --background-light: 200 20% 97%;
     --background-dark: 16 25 34;
-    --text-light: 16 25 34;
-    --text-light-secondary: 82 95 107;
+    --text-light: 0 0% 10%;
+    --text-light-secondary: 0 0% 40%;
     --sidebar-background: 0 0% 98%;
     --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
@@ -74,8 +74,17 @@
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-white;
     font-family: var(--font-manrope), sans-serif;
+    color: #101922;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    color: #101922;
+  }
+  
+  p, span, a, li {
+    color: inherit;
   }
   
   .material-symbols-outlined {
