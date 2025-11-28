@@ -155,17 +155,7 @@ export default function Home() {
                   <h2 className="text-text-light text-4xl font-black leading-tight tracking-[-0.033em]">Choose Your Plan</h2>
                   <p className="text-text-light-secondary text-lg font-normal leading-normal max-w-2xl">Simple, transparent pricing to get you started on your next big idea.</p>
                 </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 w-full max-w-7xl">
-                  {/* Free Plan */}
-                  <div className="flex flex-col p-6 rounded-xl border border-black/10 bg-white">
-                    <h3 className="text-text-light text-lg font-bold">Free</h3>
-                    <p className="text-text-light text-4xl font-black mt-4">$0</p>
-                    <p className="text-text-light-secondary text-sm mt-2 italic">Free for you, we cover the cost</p>
-                    <Button asChild variant="outline" className="w-full mt-8 h-10 px-4 bg-black/[.08] text-text-light text-sm font-bold leading-normal tracking-[0.015em] hover:bg-black/10 border-0 no-underline">
-                      <Link href="/pricing" className="no-underline">Get Started</Link>
-                    </Button>
-                  </div>
-
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 w-full max-w-6xl">
                   {/* Basic Plan */}
                   <div className="flex flex-col p-6 rounded-xl border border-black/10 bg-white">
                     <h3 className="text-text-light text-lg font-bold">Basic</h3>

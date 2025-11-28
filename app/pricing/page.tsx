@@ -7,13 +7,6 @@ export default function PricingPage() {
 
   const plans = [
     {
-      id: 'free',
-      name: 'Free',
-      price: '$0',
-      buttonText: 'Get Started',
-      checkoutUrl: '/api/checkout/free',
-    },
-    {
       id: 'basic',
       name: 'Basic',
       price: '$20',
@@ -46,12 +39,6 @@ export default function PricingPage() {
   const handleCheckout = async (planId: string, checkoutUrl: string) => {
     if (planId === 'enterprise') {
       router.push(checkoutUrl)
-      return
-    }
-
-    // Free plan - skip checkout, go directly to success
-    if (planId === 'free') {
-      router.push(`/success?plan=free`)
       return
     }
 
@@ -97,7 +84,7 @@ export default function PricingPage() {
       <div className="max-w-6xl mx-auto">
         <h1 className="text-4xl font-bold text-center mb-12">Pricing Plans</h1>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {plans.map((plan) => (
             <div
               key={plan.id}
@@ -107,11 +94,6 @@ export default function PricingPage() {
               <div className="text-3xl font-bold mb-2 text-gray-900">
                 {plan.price}
               </div>
-              {plan.id === 'free' && (
-                <p className="text-sm text-gray-500 mb-4 italic">
-                  Free for you, we cover the cost
-                </p>
-              )}
               <button
                 onClick={() => handleCheckout(plan.id, plan.checkoutUrl)}
                 className="mt-auto px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition text-center w-full"
