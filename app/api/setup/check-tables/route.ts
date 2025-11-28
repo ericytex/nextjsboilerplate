@@ -125,6 +125,8 @@ export async function POST(request: Request) {
       } : null,
       recommendation: tablesFound 
         ? 'Tables are accessible! You can proceed.'
+        : errorDetails?.code === '42P17' || errorDetails?.message?.includes('infinite recursion')
+        ? 'Tables exist but RLS policy has infinite recursion. Add Service Role Key to bypass, or fix the policy in Supabase SQL Editor.'
         : permissionIssue && serviceRoleKey
         ? 'Tables exist but RLS is blocking. Service Role Key works - proceed with setup.'
         : permissionIssue && !serviceRoleKey

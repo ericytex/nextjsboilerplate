@@ -181,21 +181,28 @@ export default function SetupPage() {
         setTimeout(() => {
           saveDatabaseConfig()
         }, 1000)
-      } else if (data.permissionIssue || data.needsServiceRoleKey) {
-        // Permission error - need service role key
+      } else if (data.policyIssue || (data.permissionIssue || data.needsServiceRoleKey)) {
+        // Permission error or policy issue - need service role key
         setTablesVerified(false)
-        toast.warning('Permission Issue Detected', {
-          description: 'Tables exist but RLS is blocking access. Add Service Role Key to proceed.',
+        const isPolicyIssue = data.policyIssue || data.error?.includes('infinite recursion')
+        toast.warning(isPolicyIssue ? 'RLS Policy Issue Detected' : 'Permission Issue Detected', {
+          description: isPolicyIssue 
+            ? 'Tables exist but RLS policy has infinite recursion. Add Service Role Key or fix the policy.'
+            : 'Tables exist but RLS is blocking access. Add Service Role Key to proceed.',
           duration: 15000
         })
         setErrorMessage(
-          `🔒 Permission Issue Detected\n\n` +
+          (isPolicyIssue ? `🔄 RLS Policy Issue Detected\n\n` : `🔒 Permission Issue Detected\n\n`) +
           `✅ Good news: Your tables exist in Supabase!\n` +
-          `❌ Problem: Row Level Security (RLS) is blocking access with the Anon/Publishable key.\n\n` +
+          (isPolicyIssue 
+            ? `❌ Problem: Infinite recursion detected in RLS policy for "users" table.\n` +
+              `This happens when a policy references the same table it protects.\n\n`
+            : `❌ Problem: Row Level Security (RLS) is blocking access with the Anon/Publishable key.\n\n`) +
           `💡 Solution:\n` +
           `1. Add your Service Role Key in the "Service Role Key (Optional)" field above\n` +
           `2. Click "Verify Tables Created" again\n\n` +
           `The Service Role Key bypasses RLS and allows setup to complete.\n\n` +
+          (data.fixPolicySql ? `🔧 Alternative: Fix the policy in Supabase SQL Editor:\n\n\`\`\`sql\n${data.fixPolicySql}\n\`\`\`\n\n` : '') +
           `Diagnostic: ${diagnosticData?.recommendation || data.details || data.error}\n\n` +
           (diagnosticData?.diagnostics ? `Details:\n${diagnosticData.diagnostics.map((d: any) => `- ${d.step}: ${d.error || 'OK'}`).join('\n')}` : '')
         )

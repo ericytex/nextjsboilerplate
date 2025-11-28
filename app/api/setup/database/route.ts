@@ -103,6 +103,51 @@ export async function POST(request: Request) {
         code: tableCheckError?.code
       })
       
+      // Check for infinite recursion in RLS policy (code 42P17)
+      if (tableCheckError?.code === '42P17' || tableCheckError?.message?.includes('infinite recursion')) {
+        console.log('🔄 Infinite recursion detected in RLS policy - this is a policy issue, not missing tables')
+        return NextResponse.json({
+          needsTable: false, // Tables exist, policy is broken
+          permissionIssue: true,
+          policyIssue: true,
+          sql: sql,
+          error: 'Infinite recursion detected in RLS policy for "users" table.',
+          instructions: 'Your tables exist, but there is an infinite recursion in the Row Level Security (RLS) policy. This happens when a policy references the same table it protects.',
+          sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+          details: tableCheckError?.message || 'Infinite recursion in RLS policy',
+          needsServiceRoleKey: true,
+          suggestion: 'Option 1: Add your Service Role Key to bypass RLS and complete setup.\n\nOption 2: Fix the RLS policy in Supabase SQL Editor (see SQL below).',
+          fixPolicySql: `-- Fix infinite recursion in users table RLS policy
+-- Drop the problematic policy
+DROP POLICY IF EXISTS "Users can read own data" ON users;
+DROP POLICY IF EXISTS "Users can update own data" ON users;
+
+-- Create simpler policies that don't cause recursion
+-- Allow users to read their own data (using auth.uid() directly)
+CREATE POLICY "Users can read own data" 
+ON users FOR SELECT 
+USING (auth.uid() = id);
+
+-- Allow users to update their own data
+CREATE POLICY "Users can update own data" 
+ON users FOR UPDATE 
+USING (auth.uid() = id);
+
+-- Allow service role to do everything (for setup/admin)
+CREATE POLICY "Service role can manage users" 
+ON users FOR ALL 
+USING (true) 
+WITH CHECK (true);`,
+          diagnostic: {
+            tablesExist: true,
+            accessible: false,
+            reason: 'Infinite recursion in RLS policy',
+            code: '42P17',
+            solution: 'Use Service Role Key or fix policy'
+          }
+        }, { status: 403 })
+      }
+      
       // Check if it's a permission error - might need service role key
       if (permissionIssue && !serviceRoleKey) {
         console.log('💡 Recommendation: Add Service Role Key to bypass RLS')
@@ -126,12 +171,15 @@ export async function POST(request: Request) {
       }
       
       // Check if tables actually don't exist
-      const isTableMissing = tableCheckError?.code === 'PGRST116' || 
-                            tableCheckError?.code === '42P01' ||
-                            tableCheckError?.message?.includes('relation') ||
+      // Exclude policy errors (42P17 = infinite recursion, 42501 = permission denied)
+      const isTableMissing = (tableCheckError?.code === 'PGRST116' || 
+                            tableCheckError?.code === '42P01') &&
+                            tableCheckError?.code !== '42P17' &&
+                            tableCheckError?.code !== '42501' &&
+                            (tableCheckError?.message?.includes('relation') ||
                             tableCheckError?.message?.includes('does not exist') ||
                             tableCheckError?.message?.includes('table') ||
-                            tableCheckError?.message?.includes('schema')
+                            tableCheckError?.message?.includes('schema'))
       
       if (isTableMissing) {
         console.log('💡 Recommendation: Tables do not exist - need to create them')
