@@ -49,7 +49,8 @@ export default function SigninPage() {
     }}>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <header className="flex items-center justify-between py-4 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-50">
+        <header className="flex items-center justify-between py-4 border-b border-gray-200 fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm z-50 shadow-sm">
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-gray-900 hover:opacity-80 transition-opacity">
             <svg className="w-6 h-6 text-yellow-DEFAULT" fill="currentColor" viewBox="0 0 24 24">
               <path d="M13 2L3 14h8v8l10-12h-8V2z"/>
@@ -62,10 +63,11 @@ export default function SigninPage() {
             <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="/#blog">Resources</a>
             <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="/signup">Sign up</a>
           </div>
+          </div>
         </header>
 
         {/* Main Content */}
-        <main className="py-12 lg:py-20">
+        <main className="py-12 lg:py-20 mt-16">
           <div className="grid lg:grid-cols-2 gap-12 items-center max-w-6xl mx-auto">
             {/* Left Side - Signin Form */}
             <div className="w-full">

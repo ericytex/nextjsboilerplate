@@ -135,7 +135,8 @@ function PricingContent() {
     }}>
       <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         {/* Header */}
-        <header className="flex items-center justify-between py-4 border-b border-gray-200 sticky top-0 bg-white/95 backdrop-blur-sm z-50">
+        <header className="flex items-center justify-between py-4 border-b border-gray-200 fixed top-0 left-0 right-0 bg-white/95 backdrop-blur-sm z-50 shadow-sm">
+          <div className="w-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between">
           <Link href="/" className="flex items-center gap-2 text-gray-900 hover:opacity-80 transition-opacity">
             <svg className="w-6 h-6 text-yellow-DEFAULT" fill="currentColor" viewBox="0 0 24 24">
               <path d="M13 2L3 14h8v8l10-12h-8V2z"/>
@@ -151,10 +152,11 @@ function PricingContent() {
               <Link href="/signup" className="no-underline">Start Free Trial</Link>
             </Button>
           </div>
+          </div>
         </header>
 
         {/* Main Content */}
-        <main className="py-12 lg:py-20">
+        <main className="py-12 lg:py-20 mt-16">
           {/* Top Section */}
           <div className="text-center mb-12">
             <h1 className="text-4xl lg:text-5xl font-black text-gray-900 mb-4">
