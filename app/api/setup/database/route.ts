@@ -599,6 +599,12 @@ WITH CHECK (true);
     ON users FOR UPDATE 
     USING (auth.uid() = id);
 
+    -- Allow users to insert their own data (for signup)
+    -- This allows users to create their own account
+    CREATE POLICY "Users can insert own data" 
+    ON users FOR INSERT 
+    WITH CHECK (auth.uid() = id);
+
     -- Allow service role to manage all users (for setup/admin operations)
     -- Service role key bypasses RLS, so this is for explicit admin operations
     CREATE POLICY "Service role can manage users" 
