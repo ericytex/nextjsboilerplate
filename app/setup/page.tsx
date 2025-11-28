@@ -36,6 +36,8 @@ export default function SetupPage() {
 
   const [connectionStatus, setConnectionStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle')
   const [errorMessage, setErrorMessage] = useState('')
+  const [verifyingTables, setVerifyingTables] = useState(false)
+  const [tablesVerified, setTablesVerified] = useState(false)
 
   // Check if setup is already complete
   useEffect(() => {
@@ -118,8 +120,64 @@ export default function SetupPage() {
     }
   }
 
+  const verifyTables = async () => {
+    if (!databaseConfig.projectUrl || !databaseConfig.anonKey) {
+      toast.error('Please enter database credentials first')
+      return
+    }
+
+    setVerifyingTables(true)
+    setTablesVerified(false)
+    setErrorMessage('')
+
+    try {
+      const response = await fetch('/api/setup/database', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(databaseConfig)
+      })
+
+      const data = await response.json()
+
+      if (response.ok && !data.needsTable) {
+        // Tables exist!
+        setTablesVerified(true)
+        toast.success('✅ Tables verified! All database tables are created.')
+        setConnectionStatus('success')
+        // Automatically proceed to save config
+        setTimeout(() => {
+          saveDatabaseConfig()
+        }, 1000)
+      } else if (data.needsTable) {
+        // Tables still don't exist
+        setTablesVerified(false)
+        toast.error('Tables not found', {
+          description: 'Please make sure you ran the SQL in Supabase SQL Editor and it completed successfully.',
+          duration: 10000
+        })
+        setErrorMessage(
+          `❌ Tables not found yet.\n\n` +
+          `Please verify:\n` +
+          `1. You copied the entire SQL (from CREATE TABLE to the end)\n` +
+          `2. You clicked "Run" in Supabase SQL Editor\n` +
+          `3. You saw a "Success" message\n` +
+          `4. Check Supabase Table Editor to confirm tables exist\n\n` +
+          `If tables were created, click "Verify Tables" again.`
+        )
+      } else {
+        throw new Error(data.error || 'Failed to verify tables')
+      }
+    } catch (error: any) {
+      setTablesVerified(false)
+      toast.error('Failed to verify tables')
+      setErrorMessage(error.message || 'Failed to verify tables')
+    } finally {
+      setVerifyingTables(false)
+    }
+  }
+
   const saveDatabaseConfig = async () => {
-    if (connectionStatus !== 'success') {
+    if (connectionStatus !== 'success' && !tablesVerified) {
       toast.error('Please test connection first')
       return
     }
@@ -392,7 +450,7 @@ export default function SetupPage() {
                 <Alert variant="destructive" className="max-h-96 overflow-y-auto">
                   <AlertDescription className="whitespace-pre-wrap font-mono text-sm">{errorMessage}</AlertDescription>
                   {errorMessage.includes('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━') && (
-                    <div className="mt-4">
+                    <div className="mt-4 space-y-2">
                       <Button
                         type="button"
                         variant="outline"
@@ -408,8 +466,42 @@ export default function SetupPage() {
                       >
                         📋 Copy SQL to Clipboard
                       </Button>
+                      <Button
+                        type="button"
+                        variant="default"
+                        size="sm"
+                        onClick={verifyTables}
+                        disabled={verifyingTables || !databaseConfig.projectUrl || !databaseConfig.anonKey}
+                        className="w-full"
+                      >
+                        {verifyingTables ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Verifying Tables...
+                          </>
+                        ) : tablesVerified ? (
+                          <>
+                            <CheckCircle2 className="h-4 w-4 mr-2" />
+                            Tables Verified ✓
+                          </>
+                        ) : (
+                          <>
+                            <Database className="h-4 w-4 mr-2" />
+                            Verify Tables Created
+                          </>
+                        )}
+                      </Button>
                     </div>
                   )}
+                </Alert>
+              )}
+
+              {tablesVerified && !errorMessage && (
+                <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
+                  <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
+                  <AlertDescription className="text-green-800 dark:text-green-200">
+                    ✅ All tables verified! Proceeding to save configuration...
+                  </AlertDescription>
                 </Alert>
               )}
 
