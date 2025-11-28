@@ -27,10 +27,13 @@ export async function GET() {
     )
   }
 
+  // Add trial information to the response
   return NextResponse.json({
     url: checkoutUrl,
-    success_url: `${baseUrl}/success?plan=basic`,
+    success_url: `${baseUrl}/success?plan=basic&trial=true`,
     cancel_url: `${baseUrl}/cancel`,
+    trial_days: 14,
+    message: '14-day free trial - You will not be charged for 14 days'
   })
 }
 

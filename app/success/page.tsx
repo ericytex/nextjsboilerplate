@@ -8,6 +8,8 @@ function SuccessContent() {
   const searchParams = useSearchParams()
   const router = useRouter()
   const plan = searchParams.get('plan') || 'unknown'
+  const trial = searchParams.get('trial') === 'true'
+  const isBasicPlan = plan === 'basic'
 
   // Automatically redirect to dashboard after 3 seconds
   useEffect(() => {
@@ -22,11 +24,21 @@ function SuccessContent() {
     <main className="min-h-screen p-8 flex items-center justify-center">
       <div className="max-w-md mx-auto text-center">
         <h1 className="text-4xl font-bold mb-4 text-green-600">
-          Payment Successful
+          {trial && isBasicPlan ? 'Free Trial Started!' : 'Payment Successful'}
         </h1>
         <p className="text-lg text-gray-600 mb-2">
           Plan: <span className="font-semibold capitalize">{plan}</span>
         </p>
+        {trial && isBasicPlan && (
+          <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
+            <p className="text-green-800 font-semibold mb-2">
+              🎉 Your 14-Day Free Trial is Active!
+            </p>
+            <p className="text-sm text-green-700">
+              Your card has been saved but you won't be charged for 14 days. Enjoy full access to all Basic plan features!
+            </p>
+          </div>
+        )}
         <p className="text-sm text-gray-500 mb-6">
           Redirecting to your dashboard in a few seconds...
         </p>

@@ -76,12 +76,12 @@ export default function Home() {
 
               {/* CTA Buttons */}
               <div className="flex flex-wrap gap-4">
-                <Button asChild className="h-12 px-8 bg-yellow-DEFAULT text-gray-900 text-base font-bold hover:bg-yellow-dark hover:scale-105 transition-all shadow-lg hover:shadow-xl no-underline group">
-                  <Link href="/pricing" className="no-underline flex items-center gap-2">
-                    Start Free Trial
-                    <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
-                  </Link>
-                </Button>
+              <Button asChild className="h-12 px-8 bg-yellow-DEFAULT text-gray-900 text-base font-bold hover:bg-yellow-dark hover:scale-105 transition-all shadow-lg hover:shadow-xl no-underline group">
+                <Link href="/pricing?plan=basic&trial=true" className="no-underline flex items-center gap-2">
+                  Start Free Trial
+                  <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                </Link>
+              </Button>
                 <Button asChild variant="outline" className="h-12 px-6 bg-white border-2 border-gray-300 text-gray-900 text-base font-bold hover:bg-gray-50 hover:border-gray-400 transition-all no-underline">
                   <Link href="#demo" className="no-underline flex items-center gap-2">
                     <span className="material-symbols-outlined">play_circle</span>
@@ -468,8 +468,8 @@ export default function Home() {
                         : 'bg-white border-2 border-gray-300 text-gray-900 hover:bg-gray-50'
                     }`}
                   >
-                    <Link href={plan.custom ? '/contact' : '/pricing'} className="no-underline">
-                      {plan.custom ? 'Contact Sales' : 'Start Free Trial'}
+                    <Link href={plan.custom ? '/contact' : plan.name === 'Starter' ? '/pricing?plan=basic&trial=true' : '/pricing'} className="no-underline">
+                      {plan.custom ? 'Contact Sales' : plan.name === 'Starter' ? 'Start Free Trial' : 'Choose Plan'}
                     </Link>
                   </Button>
                 </div>
@@ -546,7 +546,7 @@ export default function Home() {
             </p>
             <div className="flex flex-wrap gap-4 justify-center">
               <Button asChild className="h-14 px-10 bg-gray-900 text-white text-lg font-bold hover:bg-gray-800 hover:scale-105 transition-all shadow-xl no-underline">
-                <Link href="/pricing" className="no-underline">Start Free Trial</Link>
+                <Link href="/pricing?plan=basic&trial=true" className="no-underline">Start Free Trial</Link>
               </Button>
               <Button asChild variant="outline" className="h-14 px-10 bg-white/90 border-2 border-gray-900 text-gray-900 text-lg font-bold hover:bg-white transition-all no-underline">
                 <Link href="#demo" className="no-underline">Watch Demo</Link>
