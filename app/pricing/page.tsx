@@ -3,19 +3,20 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, Suspense } from 'react'
+import { useEffect, Suspense, useState } from 'react'
 
 function PricingContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const trial = searchParams.get('trial') === 'true'
   const planParam = searchParams.get('plan')
+  const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
 
   useEffect(() => {
-    // If trial=true and plan=starter, auto-trigger checkout
-    if (trial && planParam === 'starter') {
+    // If trial=true and plan=basic, auto-trigger checkout
+    if (trial && planParam === 'basic') {
       const timer = setTimeout(() => {
-        handleCheckout('starter', '/api/checkout/basic')
+        handleCheckout('basic', '/api/checkout/basic')
       }, 500) // Small delay for better UX
       return () => clearTimeout(timer)
     }
@@ -23,51 +24,55 @@ function PricingContent() {
 
   const plans = [
     {
-      id: 'starter',
-      name: 'Starter',
-      price: '$39',
+      id: 'basic',
+      name: 'Basic',
+      price: billingCycle === 'monthly' ? '$20' : '$200',
+      priceNote: billingCycle === 'yearly' ? '$16.67/month' : '/month',
       videosPerMonth: 40,
       credits: 400,
       series: 1,
-      buttonText: 'Subscribe',
+      buttonText: 'Start Free Trial',
       checkoutUrl: '/api/checkout/basic',
       trialDays: 14,
-      highlight: false,
+      highlight: trial && planParam === 'basic',
     },
     {
-      id: 'growth',
-      name: 'Growth',
-      price: '$69',
+      id: 'pro',
+      name: 'Pro',
+      price: billingCycle === 'monthly' ? '$40' : '$400',
+      priceNote: billingCycle === 'yearly' ? '$33.33/month' : '/month',
       videosPerMonth: 120,
       credits: 1200,
       series: 2,
-      buttonText: 'Subscribe',
+      buttonText: 'Choose Pro',
       checkoutUrl: '/api/checkout/pro',
       trialDays: 14,
-      highlight: true, // Most popular
+      highlight: false,
     },
     {
-      id: 'influencer',
-      name: 'Influencer',
-      price: '$129',
+      id: 'business',
+      name: 'Business',
+      price: billingCycle === 'monthly' ? '$100' : '$1000',
+      priceNote: billingCycle === 'yearly' ? '$83.33/month' : '/month',
       videosPerMonth: 240,
       credits: 2400,
       series: 3,
-      buttonText: 'Subscribe',
+      buttonText: 'Choose Business',
       checkoutUrl: '/api/checkout/business',
       trialDays: 14,
       highlight: false,
     },
     {
-      id: 'ultra',
-      name: 'Ultra',
-      price: '$199',
+      id: 'enterprise',
+      name: 'Enterprise',
+      price: 'Custom',
+      priceNote: '',
       videosPerMonth: 500,
       credits: 5000,
       series: 4,
-      buttonText: 'Subscribe',
-      checkoutUrl: '/api/checkout/business',
-      trialDays: 14,
+      buttonText: 'Contact Us',
+      checkoutUrl: '/contact',
+      trialDays: 0,
       highlight: false,
     },
   ]
@@ -81,18 +86,13 @@ function PricingContent() {
   ]
 
   const handleCheckout = async (planId: string, checkoutUrl: string) => {
-    // Map plan IDs to checkout endpoints
-    const planMapping: Record<string, string> = {
-      'starter': '/api/checkout/basic',
-      'growth': '/api/checkout/pro',
-      'influencer': '/api/checkout/business',
-      'ultra': '/api/checkout/business'
+    if (planId === 'enterprise') {
+      router.push(checkoutUrl)
+      return
     }
-    
-    const actualCheckoutUrl = planMapping[planId] || checkoutUrl
 
     try {
-      const response = await fetch(actualCheckoutUrl)
+      const response = await fetch(checkoutUrl)
       const data = await response.json()
       
       // Check for errors from API
@@ -155,17 +155,73 @@ function PricingContent() {
 
         {/* Main Content */}
         <main className="py-12 lg:py-20">
+          {/* Top Section */}
           <div className="text-center mb-12">
-            <h1 className="text-4xl lg:text-5xl font-black text-gray-900 mb-4">Pricing Plans</h1>
-            {trial && planParam === 'starter' && (
+            <h1 className="text-4xl lg:text-5xl font-black text-gray-900 mb-4">
+              Pick up the plan that fits your needs
+            </h1>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto mb-8">
+              Get 2 months free on yearly pricing. You can cancel your subscription at anytime.
+            </p>
+
+            {/* Trust Section */}
+            <div className="flex flex-col items-center gap-4 mb-8">
+              <div className="flex items-center gap-4">
+                {/* Avatar Row */}
+                <div className="flex -space-x-2">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <div
+                      key={i}
+                      className="w-10 h-10 rounded-full border-2 border-white bg-gradient-to-br from-purple-400 to-pink-400 shadow-md"
+                      style={{
+                        backgroundImage: `url(https://i.pravatar.cc/150?img=${i})`,
+                        backgroundSize: 'cover'
+                      }}
+                    />
+                  ))}
+                </div>
+                
+                {/* Stars */}
+                <div className="flex gap-0.5">
+                  {[1, 2, 3, 4, 5].map((i) => (
+                    <span key={i} className="material-symbols-outlined text-yellow-DEFAULT text-xl fill-yellow-DEFAULT">star</span>
+                  ))}
+                </div>
+              </div>
+              
+              <p className="text-gray-700 font-semibold">Trusted by 27,000+ creators</p>
+            </div>
+
+            {/* Billing Toggle */}
+            <div className="flex items-center justify-center gap-4 mb-8">
+              <button
+                onClick={() => setBillingCycle('monthly')}
+                className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                  billingCycle === 'monthly'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Monthly
+              </button>
+              <button
+                onClick={() => setBillingCycle('yearly')}
+                className={`px-6 py-2 rounded-lg font-semibold transition-all ${
+                  billingCycle === 'yearly'
+                    ? 'bg-gray-900 text-white'
+                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                }`}
+              >
+                Yearly
+              </button>
+            </div>
+
+            {trial && planParam === 'basic' && (
               <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-lg mb-4">
                 <span className="material-symbols-outlined">check_circle</span>
                 <span className="font-semibold">14-Day Free Trial - No charge for 14 days</span>
               </div>
             )}
-            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-              Start your free trial today. Add your card details now, but you won't be charged for the first 14 days.
-            </p>
           </div>
           
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
@@ -183,9 +239,14 @@ function PricingContent() {
                 </h2>
                 
                 <div className="mb-6">
-                  <div className={`text-4xl font-black mb-4 ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>
+                  <div className={`text-4xl font-black mb-1 ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>
                     {plan.price}
                   </div>
+                  {plan.priceNote && (
+                    <div className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>
+                      {plan.priceNote}
+                    </div>
+                  )}
                   
                   {/* Plan Details */}
                   <div className="space-y-3 mb-6">
@@ -236,10 +297,12 @@ function PricingContent() {
                 )}
 
                 <Button
-                  onClick={() => handleCheckout(plan.id, plan.checkoutUrl)}
+                  onClick={() => plan.id !== 'enterprise' ? handleCheckout(plan.id, plan.checkoutUrl) : router.push('/contact')}
                   className={`w-full h-12 font-bold transition-all hover:scale-105 no-underline ${
                     plan.highlight
                       ? 'bg-white text-gray-900 hover:bg-gray-100'
+                      : plan.id === 'enterprise'
+                      ? 'bg-gray-700 text-white hover:bg-gray-600'
                       : 'bg-gray-900 text-white hover:bg-gray-800'
                   }`}
                 >
