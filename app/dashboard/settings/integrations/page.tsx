@@ -125,7 +125,7 @@ export default function IntegrationsPage() {
         'Copy your anon/public key and service role key',
         'Add SUPABASE_URL and SUPABASE_ANON_KEY to environment variables'
       ],
-      requiredFields: ['databaseUrl', 'customSettings.projectUrl', 'customSettings.anonKey']
+      requiredFields: ['customSettings.projectUrl', 'customSettings.anonKey']
     },
     {
       id: 'prisma',
@@ -312,16 +312,19 @@ export default function IntegrationsPage() {
         const anonKey = integration.config.customSettings?.anonKey
         
         if (!projectUrl || !anonKey) {
-          throw new Error('Please configure Project URL and Anon Key')
+          throw new Error('Please enter Project URL and Anon Key to test connection')
         }
 
-        // Test Supabase connection
+        // Test Supabase connection with credentials from form
         const response = await fetch('/api/supabase/test', {
-          method: 'GET',
+          method: 'POST',
           headers: {
-            'X-Supabase-URL': projectUrl,
-            'X-Supabase-Key': anonKey
-          }
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            url: projectUrl,
+            key: anonKey
+          })
         })
 
         const data = await response.json()
@@ -332,7 +335,7 @@ export default function IntegrationsPage() {
               ? { ...i, config: { ...i.config, connectionStatus: 'connected' } }
               : i
           ))
-          toast.success(`${integration.name} connection successful!`)
+          toast.success('✅ Supabase connection successful! You can now save and start using it.')
         } else {
           throw new Error(data.error || 'Connection failed')
         }
@@ -601,7 +604,7 @@ export default function IntegrationsPage() {
                       {integration.id === 'supabase' && (
                         <>
                           <div className="space-y-2">
-                            <Label htmlFor={`supabase-url-${integration.id}`}>Project URL</Label>
+                            <Label htmlFor={`supabase-url-${integration.id}`}>Project URL *</Label>
                             <Input
                               id={`supabase-url-${integration.id}`}
                               type="url"
@@ -611,9 +614,12 @@ export default function IntegrationsPage() {
                                 handleConfigChange(integration.id, 'customSettings.projectUrl', e.target.value)
                               }}
                             />
+                            <p className="text-xs text-muted-foreground">
+                              Found in Supabase Dashboard → Settings → API → Project URL
+                            </p>
                           </div>
                           <div className="space-y-2">
-                            <Label htmlFor={`supabase-anon-${integration.id}`}>Anon/Public Key</Label>
+                            <Label htmlFor={`supabase-anon-${integration.id}`}>Anon/Public Key *</Label>
                             <div className="relative">
                               <Input
                                 id={`supabase-anon-${integration.id}`}
@@ -638,7 +644,38 @@ export default function IntegrationsPage() {
                                 )}
                               </Button>
                             </div>
+                            <p className="text-xs text-muted-foreground">
+                              Found in Supabase Dashboard → Settings → API → anon/public key
+                            </p>
                           </div>
+                          
+                          {/* Quick Test Button - Only for Supabase */}
+                          {integration.id === 'supabase' && (
+                            <div className="flex items-center gap-2 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                              <div className="flex-1">
+                                <p className="text-sm font-medium text-blue-900 dark:text-blue-100">
+                                  Ready to test?
+                                </p>
+                                <p className="text-xs text-blue-700 dark:text-blue-300 mt-1">
+                                  Enter your Project URL and Anon Key above, then click Test Connection
+                                </p>
+                              </div>
+                              <Button
+                                type="button"
+                                onClick={() => testConnection(integration.id)}
+                                disabled={
+                                  testing === integration.id || 
+                                  !integration.config.customSettings?.projectUrl || 
+                                  !integration.config.customSettings?.anonKey
+                                }
+                                className="bg-blue-600 hover:bg-blue-700 text-white"
+                                size="sm"
+                              >
+                                <TestTube className="h-4 w-4 mr-2" />
+                                {testing === integration.id ? 'Testing...' : 'Test Connection'}
+                              </Button>
+                            </div>
+                          )}
                           <div className="space-y-2">
                             <Label htmlFor={`supabase-service-${integration.id}`}>Service Role Key (Optional)</Label>
                             <div className="relative">
