@@ -42,7 +42,7 @@ export default function Home() {
           </Link>
           <div className="hidden md:flex items-center gap-6">
             <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="#features">Features</a>
-            <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="#pricing">Pricing</a>
+            <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="/pricing">Pricing</a>
             <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="#blog">Resources</a>
             <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="#">Sign in</a>
             <Button asChild className="h-9 px-4 bg-yellow-DEFAULT text-gray-900 text-sm font-bold hover:bg-yellow-dark transition-all no-underline">
@@ -358,131 +358,6 @@ export default function Home() {
             </div>
           </section>
 
-          {/* Pricing Section */}
-          <section id="pricing" className="py-20 mb-20">
-            <div className="text-center mb-12">
-              <h2 className="text-4xl lg:text-5xl font-black text-gray-900 mb-4">Simple, Transparent Pricing</h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">Choose the plan that fits your content creation needs</p>
-            </div>
-            
-            <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto">
-              {[
-                {
-                  name: 'Starter',
-                  price: '$19',
-                  period: '/month',
-                  videos: '5 videos',
-                  features: [
-                    '5 AI-generated videos',
-                    'All video styles',
-                    'AI voiceovers',
-                    'Music library access',
-                    'HD quality export'
-                  ],
-                  popular: false
-                },
-                {
-                  name: 'Creator',
-                  price: '$69',
-                  period: '/month',
-                  videos: '60 videos',
-                  features: [
-                    '60 AI-generated videos',
-                    'All video styles',
-                    'Premium AI voices',
-                    'Music library + custom uploads',
-                    '4K quality export',
-                    'Auto-publishing to 3 platforms',
-                    'Priority support'
-                  ],
-                  popular: true
-                },
-                {
-                  name: 'Pro',
-                  price: '$149',
-                  period: '/month',
-                  videos: 'Unlimited videos',
-                  features: [
-                    'Unlimited AI-generated videos',
-                    'All video styles + custom styles',
-                    'All premium voices',
-                    'Full music library',
-                    '4K quality export',
-                    'Auto-publishing + scheduling',
-                    'Analytics dashboard',
-                    'Dedicated support'
-                  ],
-                  popular: false
-                },
-                {
-                  name: 'Enterprise',
-                  price: 'Custom',
-                  period: '',
-                  videos: 'Custom volume',
-                  features: [
-                    'Custom video limits',
-                    'White-label options',
-                    'API access',
-                    'Custom integrations',
-                    'Dedicated account manager',
-                    'SLA guarantee'
-                  ],
-                  popular: false,
-                  custom: true
-                }
-              ].map((plan, index) => (
-                <div
-                  key={index}
-                  className={`flex flex-col p-8 rounded-2xl border-2 ${
-                    plan.popular
-                      ? 'border-yellow-DEFAULT bg-yellow-light scale-105'
-                      : 'border-gray-200 bg-white'
-                  } relative hover:shadow-xl transition-all`}
-                >
-                  {plan.popular && (
-                    <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-yellow-DEFAULT text-gray-900 text-xs font-bold px-4 py-1 rounded-full uppercase">
-                      Most Popular
-                    </div>
-                  )}
-                  <h3 className="text-2xl font-black text-gray-900 mb-2">{plan.name}</h3>
-                  <div className="flex items-baseline mb-1">
-                    <span className="text-5xl font-black text-gray-900">{plan.price}</span>
-                    {plan.period && <span className="text-gray-600 ml-2">{plan.period}</span>}
-                  </div>
-                  <p className="text-gray-600 mb-6">{plan.videos}</p>
-                  <ul className="flex-1 space-y-3 mb-8">
-                    {plan.features.map((feature, fIndex) => (
-                      <li key={fIndex} className="flex items-start gap-2">
-                        <span className="material-symbols-outlined text-yellow-DEFAULT text-lg">check_circle</span>
-                        <span className="text-gray-700 text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                  <Button
-                    asChild
-                    className={`w-full h-12 font-bold transition-all hover:scale-105 no-underline ${
-                      plan.popular
-                        ? 'bg-yellow-DEFAULT text-gray-900 hover:bg-yellow-dark'
-                        : plan.custom
-                        ? 'bg-gray-900 text-white hover:bg-gray-800'
-                        : 'bg-white border-2 border-gray-300 text-gray-900 hover:bg-gray-50'
-                    }`}
-                  >
-                    <Link href={plan.custom ? '/contact' : plan.name === 'Starter' ? '/pricing?plan=basic&trial=true' : '/pricing'} className="no-underline">
-                      {plan.custom ? 'Contact Sales' : plan.name === 'Starter' ? 'Start Free Trial' : 'Choose Plan'}
-                    </Link>
-                  </Button>
-                </div>
-              ))}
-            </div>
-
-            <div className="text-center mt-12">
-              <p className="text-gray-600 mb-4">All plans include a 7-day free trial. No credit card required.</p>
-              <Button asChild variant="outline" className="h-12 px-8 border-2 border-gray-300 text-gray-900 font-bold hover:bg-gray-50 no-underline">
-                <Link href="/pricing" className="no-underline">Compare All Plans</Link>
-              </Button>
-            </div>
-          </section>
 
           {/* Resources/Blog Section */}
           <section id="blog" className="py-20 mb-20">
@@ -571,7 +446,7 @@ export default function Home() {
               <h4 className="font-bold text-gray-900 mb-4">Product</h4>
               <ul className="space-y-2 text-sm">
                 <li><a href="#features" className="text-gray-600 hover:text-gray-900 no-underline">Features</a></li>
-                <li><a href="#pricing" className="text-gray-600 hover:text-gray-900 no-underline">Pricing</a></li>
+                <li><a href="/pricing" className="text-gray-600 hover:text-gray-900 no-underline">Pricing</a></li>
                 <li><a href="#demo" className="text-gray-600 hover:text-gray-900 no-underline">Demo</a></li>
               </ul>
             </div>
