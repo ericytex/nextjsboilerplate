@@ -11,6 +11,14 @@ function SuccessContent() {
   const trial = searchParams.get('trial') === 'true'
   const isBasicPlan = plan === 'basic'
 
+  // Set session flag when payment is successful
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user_session', 'true')
+      localStorage.setItem('has_visited_dashboard', 'true')
+    }
+  }, [])
+
   // Automatically redirect to dashboard after 3 seconds
   useEffect(() => {
     const timer = setTimeout(() => {

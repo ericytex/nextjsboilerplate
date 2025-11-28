@@ -27,6 +27,12 @@ export default function SigninPage() {
       
       await new Promise(resolve => setTimeout(resolve, 1000))
       
+      // Set session flag for dashboard access
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('user_session', 'true')
+        localStorage.setItem('has_visited_dashboard', 'true')
+      }
+      
       // Redirect to dashboard after login
       router.push('/dashboard')
     } catch (error) {
@@ -39,6 +45,10 @@ export default function SigninPage() {
 
   const handleGoogleSignin = () => {
     // TODO: Implement Google OAuth
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('user_session', 'true')
+      localStorage.setItem('has_visited_dashboard', 'true')
+    }
     router.push('/dashboard')
   }
 

@@ -167,7 +167,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="/dashboard">
+              <a href="/">
                 <ArrowUpCircleIcon className="h-5 w-5 text-yellow-DEFAULT" />
                 <span className="text-base font-semibold">aistoryshorts.com</span>
               </a>
