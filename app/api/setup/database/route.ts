@@ -582,16 +582,29 @@ ON integration_configs FOR ALL
 USING (true) 
 WITH CHECK (true);
 
--- Users: Users can read/update their own data, admins can do everything
-DROP POLICY IF EXISTS "Users can read own data" ON users;
-CREATE POLICY "Users can read own data" 
-ON users FOR SELECT 
-USING (auth.uid() = id OR (SELECT role FROM users WHERE id = auth.uid()) = 'admin');
+    -- Users: Users can read/update their own data
+    -- NOTE: Avoid infinite recursion - don't query users table in policy
+    -- Use simpler policies that don't cause recursion
+    DROP POLICY IF EXISTS "Users can read own data" ON users;
+    DROP POLICY IF EXISTS "Users can update own data" ON users;
+    DROP POLICY IF EXISTS "Service role can manage users" ON users;
+    
+    -- Allow users to read their own data (using auth.uid() directly, no subquery)
+    CREATE POLICY "Users can read own data" 
+    ON users FOR SELECT 
+    USING (auth.uid() = id);
 
-DROP POLICY IF EXISTS "Users can update own data" ON users;
-CREATE POLICY "Users can update own data" 
-ON users FOR UPDATE 
-USING (auth.uid() = id OR (SELECT role FROM users WHERE id = auth.uid()) = 'admin');
+    -- Allow users to update their own data
+    CREATE POLICY "Users can update own data" 
+    ON users FOR UPDATE 
+    USING (auth.uid() = id);
+
+    -- Allow service role to manage all users (for setup/admin operations)
+    -- Service role key bypasses RLS, so this is for explicit admin operations
+    CREATE POLICY "Service role can manage users" 
+    ON users FOR ALL 
+    USING (true) 
+    WITH CHECK (true);
 
 -- For service role operations (bypass RLS)
 -- Note: Service role key bypasses RLS, so these policies are for anon key

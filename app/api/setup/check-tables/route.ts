@@ -40,17 +40,29 @@ export async function POST(request: Request) {
         .select('id')
         .limit(1)
       
-      if (!usersError) {
-        diagnostics.push({ step: 'Anon Key: users table accessible', success: true })
-        tablesFound = true
-      } else {
-        diagnostics.push({ 
-          step: 'Anon Key: users table check failed', 
-          error: usersError.message,
-          code: usersError.code 
-        })
-        errorDetails = usersError
-      }
+        if (!usersError) {
+          diagnostics.push({ step: 'Anon Key: users table accessible', success: true })
+          tablesFound = true
+        } else {
+          // Check for infinite recursion
+          if (usersError.code === '42P17' || usersError.message?.includes('infinite recursion')) {
+            diagnostics.push({ 
+              step: 'Anon Key: users table check failed - infinite recursion in RLS policy', 
+              error: usersError.message,
+              code: usersError.code,
+              hint: 'RLS policy has infinite recursion - policy references same table it protects',
+              solution: 'Use Service Role Key or fix the policy'
+            })
+            permissionIssue = true
+          } else {
+            diagnostics.push({ 
+              step: 'Anon Key: users table check failed', 
+              error: usersError.message,
+              code: usersError.code 
+            })
+          }
+          errorDetails = usersError
+        }
     } else {
       diagnostics.push({ 
         step: 'Anon Key: integration_configs table check failed', 
