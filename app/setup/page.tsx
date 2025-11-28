@@ -82,8 +82,12 @@ export default function SetupPage() {
   }
 
   const testDatabaseConnection = async () => {
-    if (!databaseConfig.projectUrl || !databaseConfig.anonKey) {
-      setErrorMessage('Please enter Project URL and Anon Key')
+    const projectUrl = databaseConfig.projectUrl?.trim()
+    const anonKey = databaseConfig.anonKey?.trim()
+    
+    if (!projectUrl || !anonKey) {
+      toast.error('Please enter Project URL and Publishable Key')
+      setErrorMessage('Please enter Project URL and Publishable Key (Anon/Public Key)')
       return
     }
 
@@ -96,8 +100,8 @@ export default function SetupPage() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          url: databaseConfig.projectUrl,
-          key: databaseConfig.anonKey
+          url: databaseConfig.projectUrl.trim(),
+          key: databaseConfig.anonKey.trim()
         })
       })
 
@@ -121,8 +125,12 @@ export default function SetupPage() {
   }
 
   const verifyTables = async () => {
-    if (!databaseConfig.projectUrl || !databaseConfig.anonKey) {
-      toast.error('Please enter database credentials first')
+    const projectUrl = databaseConfig.projectUrl?.trim()
+    const anonKey = databaseConfig.anonKey?.trim()
+    
+    if (!projectUrl || !anonKey) {
+      toast.error('Please enter Project URL and Publishable Key first')
+      setErrorMessage('Please enter Project URL and Publishable Key (Anon/Public Key)')
       return
     }
 
@@ -177,8 +185,17 @@ export default function SetupPage() {
   }
 
   const saveDatabaseConfig = async () => {
+    const projectUrl = databaseConfig.projectUrl?.trim()
+    const anonKey = databaseConfig.anonKey?.trim()
+    
+    if (!projectUrl || !anonKey) {
+      toast.error('Please enter Project URL and Publishable Key')
+      setErrorMessage('Please enter Project URL and Publishable Key (Anon/Public Key)')
+      return
+    }
+    
     if (connectionStatus !== 'success' && !tablesVerified) {
-      toast.error('Please test connection first')
+      toast.error('Please test connection first or verify tables')
       return
     }
 
@@ -188,7 +205,12 @@ export default function SetupPage() {
       const response = await fetch('/api/setup/database', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(databaseConfig)
+        body: JSON.stringify({
+          projectUrl: projectUrl,
+          anonKey: anonKey,
+          serviceRoleKey: databaseConfig.serviceRoleKey?.trim() || '',
+          databaseUrl: databaseConfig.databaseUrl?.trim() || ''
+        })
       })
 
       const data = await response.json()
@@ -471,7 +493,7 @@ export default function SetupPage() {
                         variant="default"
                         size="sm"
                         onClick={verifyTables}
-                        disabled={verifyingTables || !databaseConfig.projectUrl || !databaseConfig.anonKey}
+                        disabled={verifyingTables || !databaseConfig.projectUrl?.trim() || !databaseConfig.anonKey?.trim()}
                         className="w-full"
                       >
                         {verifyingTables ? (
@@ -517,7 +539,7 @@ export default function SetupPage() {
               <div className="flex gap-2">
                 <Button
                   onClick={testDatabaseConnection}
-                  disabled={testing || !databaseConfig.projectUrl || !databaseConfig.anonKey}
+                  disabled={testing || !databaseConfig.projectUrl?.trim() || !databaseConfig.anonKey?.trim()}
                   variant="outline"
                   className="flex-1"
                 >
@@ -535,7 +557,7 @@ export default function SetupPage() {
                 </Button>
                 <Button
                   onClick={saveDatabaseConfig}
-                  disabled={loading || connectionStatus !== 'success'}
+                  disabled={loading || (connectionStatus !== 'success' && !tablesVerified)}
                   className="flex-1"
                 >
                   {loading ? (
