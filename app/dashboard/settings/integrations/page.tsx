@@ -306,30 +306,66 @@ export default function IntegrationsPage() {
     ))
 
     try {
-      // TODO: Replace with actual connection test API call
-      await new Promise(resolve => setTimeout(resolve, 2000))
-      
-      // Simulate connection test
-      const isConnected = integration.config.apiKey || integration.config.databaseUrl || integration.config.customSettings?.trackingId
-      
-      setIntegrations(prev => prev.map(i => 
-        i.id === integrationId 
-          ? { ...i, config: { ...i.config, connectionStatus: isConnected ? 'connected' : 'error' } }
-          : i
-      ))
+      // Test Supabase connection specifically
+      if (integrationId === 'supabase') {
+        const projectUrl = integration.config.customSettings?.projectUrl
+        const anonKey = integration.config.customSettings?.anonKey
+        
+        if (!projectUrl || !anonKey) {
+          throw new Error('Please configure Project URL and Anon Key')
+        }
 
-      if (isConnected) {
-        toast.success(`${integration.name} connection successful!`)
+        // Test Supabase connection
+        const response = await fetch('/api/supabase/test', {
+          method: 'GET',
+          headers: {
+            'X-Supabase-URL': projectUrl,
+            'X-Supabase-Key': anonKey
+          }
+        })
+
+        const data = await response.json()
+        
+        if (data.connected) {
+          setIntegrations(prev => prev.map(i => 
+            i.id === integrationId 
+              ? { ...i, config: { ...i.config, connectionStatus: 'connected' } }
+              : i
+          ))
+          toast.success(`${integration.name} connection successful!`)
+        } else {
+          throw new Error(data.error || 'Connection failed')
+        }
       } else {
-        toast.error(`Please configure ${integration.name} before testing`)
+        // Generic connection test for other integrations
+        await new Promise(resolve => setTimeout(resolve, 1500))
+        
+        const isConfigured = integration.requiredFields?.some(field => {
+          if (field.includes('.')) {
+            const [parent, child] = field.split('.')
+            return integration.config.customSettings?.[child]
+          }
+          return integration.config[field as keyof IntegrationConfig]
+        }) || false
+        
+        if (isConfigured) {
+          setIntegrations(prev => prev.map(i => 
+            i.id === integrationId 
+              ? { ...i, config: { ...i.config, connectionStatus: 'connected' } }
+              : i
+          ))
+          toast.success(`${integration.name} configuration looks good!`)
+        } else {
+          throw new Error('Please complete the required fields')
+        }
       }
-    } catch (error) {
+    } catch (error: any) {
       setIntegrations(prev => prev.map(i => 
         i.id === integrationId 
           ? { ...i, config: { ...i.config, connectionStatus: 'error' } }
           : i
       ))
-      toast.error(`Failed to test ${integration.name} connection`)
+      toast.error(error.message || `Failed to test ${integration.name} connection`)
     } finally {
       setTesting(null)
     }
