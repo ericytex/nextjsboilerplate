@@ -65,7 +65,7 @@ function PricingContent() {
     {
       id: 'enterprise',
       name: 'Enterprise',
-      price: 'Custom',
+      price: null,
       priceNote: '',
       videosPerMonth: 500,
       credits: 5000,
@@ -239,12 +239,20 @@ function PricingContent() {
                 </h2>
                 
                 <div className="mb-6">
-                  <div className={`text-4xl font-black mb-1 ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>
-                    {plan.price}
-                  </div>
-                  {plan.priceNote && (
-                    <div className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>
-                      {plan.priceNote}
+                  {plan.id !== 'enterprise' ? (
+                    <>
+                      <div className={`text-4xl font-black mb-1 ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>
+                        {plan.price}
+                      </div>
+                      {plan.priceNote && (
+                        <div className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>
+                          {plan.priceNote}
+                        </div>
+                      )}
+                    </>
+                  ) : (
+                    <div className={`text-lg font-semibold ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>
+                      Custom pricing for your needs
                     </div>
                   )}
                   
