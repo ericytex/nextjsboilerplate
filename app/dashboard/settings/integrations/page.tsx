@@ -115,7 +115,10 @@ export default function IntegrationsPage() {
         customSettings: {
           projectUrl: '',
           anonKey: '',
-          serviceRoleKey: ''
+          serviceRoleKey: '',
+          poolerUrl: '',
+          poolSize: 10,
+          connectionTimeout: 5000
         }
       },
       documentation: 'https://supabase.com/docs',
@@ -443,6 +446,17 @@ export default function IntegrationsPage() {
           <p className="text-muted-foreground mt-2">
             Configure and manage key integrations for your application. Enable services and add your API keys to get started.
           </p>
+          <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+            <p className="text-sm font-medium text-blue-900 dark:text-blue-100 mb-1">
+              💡 How to use:
+            </p>
+            <ol className="text-xs text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
+              <li>Toggle ON the integration you want to configure</li>
+              <li>Enter your API keys and credentials in the form</li>
+              <li>Click "Test Connection" to verify your credentials</li>
+              <li>Click "Save Changes" to store your configuration</li>
+            </ol>
+          </div>
         </div>
 
         {/* Category Filter */}
@@ -558,21 +572,154 @@ export default function IntegrationsPage() {
                         Configuration
                       </h4>
 
-                      {/* Database URL (for Prisma/Supabase) */}
-                      {(integration.id === 'prisma' || integration.id === 'supabase') && (
+                      {/* Supabase Database Configuration */}
+                      {integration.id === 'supabase' && (
+                        <div className="space-y-4 p-4 bg-muted rounded-lg border">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Database className="h-4 w-4" />
+                            <h5 className="font-semibold text-sm">Database Connection</h5>
+                          </div>
+                          
+                          <div className="space-y-2">
+                            <Label htmlFor={`db-url-${integration.id}`}>
+                              Connection String (PostgreSQL) <span className="text-xs text-muted-foreground">(Optional)</span>
+                            </Label>
+                            <div className="relative">
+                              <Input
+                                id={`db-url-${integration.id}`}
+                                type={showSecrets[`${integration.id}-databaseUrl`] ? 'text' : 'password'}
+                                placeholder="postgresql://postgres:[YOUR-PASSWORD]@db.[project-ref].supabase.co:5432/postgres"
+                                value={integration.config.databaseUrl || ''}
+                                onChange={(e) => {
+                                  handleConfigChange(integration.id, 'databaseUrl', e.target.value)
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3"
+                                onClick={() => toggleSecretVisibility(integration.id, 'databaseUrl')}
+                              >
+                                {showSecrets[`${integration.id}-databaseUrl`] ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                            <div className="text-xs text-muted-foreground space-y-1">
+                              <p>• Found in: Supabase Dashboard → Settings → Database → Connection string</p>
+                              <p>• Use this for direct PostgreSQL connections (Prisma, raw SQL, etc.)</p>
+                              <p>• Format: <code className="bg-background px-1 rounded">postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres</code></p>
+                            </div>
+                          </div>
+
+                          <Separator />
+
+                          <div className="space-y-2">
+                            <Label htmlFor={`db-pooler-${integration.id}`}>
+                              Connection Pooler URL <span className="text-xs text-muted-foreground">(Optional - Recommended)</span>
+                            </Label>
+                            <div className="relative">
+                              <Input
+                                id={`db-pooler-${integration.id}`}
+                                type={showSecrets[`${integration.id}-poolerUrl`] ? 'text' : 'password'}
+                                placeholder="postgresql://postgres.[project-ref]:[password]@aws-0-us-west-1.pooler.supabase.com:6543/postgres"
+                                value={integration.config.customSettings?.poolerUrl || ''}
+                                onChange={(e) => {
+                                  handleConfigChange(integration.id, 'customSettings.poolerUrl', e.target.value)
+                                }}
+                              />
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="absolute right-0 top-0 h-full px-3"
+                                onClick={() => toggleSecretVisibility(integration.id, 'poolerUrl')}
+                              >
+                                {showSecrets[`${integration.id}-poolerUrl`] ? (
+                                  <EyeOff className="h-4 w-4" />
+                                ) : (
+                                  <Eye className="h-4 w-4" />
+                                )}
+                              </Button>
+                            </div>
+                            <div className="text-xs text-muted-foreground space-y-1">
+                              <p>• Found in: Supabase Dashboard → Settings → Database → Connection pooling</p>
+                              <p>• Use for serverless/edge functions (better connection management)</p>
+                              <p>• Supports up to 15,000 concurrent connections</p>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-2">
+                              <Label htmlFor={`db-pool-size-${integration.id}`}>
+                                Pool Size <span className="text-xs text-muted-foreground">(Optional)</span>
+                              </Label>
+                              <Input
+                                id={`db-pool-size-${integration.id}`}
+                                type="number"
+                                min="1"
+                                max="100"
+                                placeholder="10"
+                                value={integration.config.customSettings?.poolSize || '10'}
+                                onChange={(e) => {
+                                  handleConfigChange(integration.id, 'customSettings.poolSize', parseInt(e.target.value) || 10)
+                                }}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Number of connections in pool (default: 10)
+                              </p>
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor={`db-timeout-${integration.id}`}>
+                                Connection Timeout (ms) <span className="text-xs text-muted-foreground">(Optional)</span>
+                              </Label>
+                              <Input
+                                id={`db-timeout-${integration.id}`}
+                                type="number"
+                                min="1000"
+                                max="30000"
+                                placeholder="5000"
+                                value={integration.config.customSettings?.connectionTimeout || '5000'}
+                                onChange={(e) => {
+                                  handleConfigChange(integration.id, 'customSettings.connectionTimeout', parseInt(e.target.value) || 5000)
+                                }}
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                Timeout in milliseconds (default: 5000)
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-start gap-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded">
+                            <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5" />
+                            <div className="text-xs text-amber-800 dark:text-amber-200">
+                              <p className="font-medium mb-1">Database Connection Tips:</p>
+                              <ul className="space-y-1 list-disc list-inside">
+                                <li>Use <strong>Connection Pooler</strong> for serverless/edge functions</li>
+                                <li>Use <strong>Direct Connection</strong> for long-lived server connections</li>
+                                <li>Pooler URL uses port <code>6543</code> (transaction mode) or <code>5432</code> (session mode)</li>
+                                <li>Direct connection always uses port <code>5432</code></li>
+                              </ul>
+                            </div>
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Prisma Database URL */}
+                      {integration.id === 'prisma' && (
                         <div className="space-y-2">
                           <Label htmlFor={`db-url-${integration.id}`}>
-                            Database URL {integration.id === 'supabase' && '(PostgreSQL Connection String)'}
+                            Database URL (PostgreSQL Connection String)
                           </Label>
                           <div className="relative">
                             <Input
                               id={`db-url-${integration.id}`}
                               type={showSecrets[`${integration.id}-databaseUrl`] ? 'text' : 'password'}
-                              placeholder={
-                                integration.id === 'supabase' 
-                                  ? 'postgresql://postgres:[password]@db.[project-ref].supabase.co:5432/postgres'
-                                  : 'postgresql://user:password@localhost:5432/dbname'
-                              }
+                              placeholder="postgresql://user:password@localhost:5432/dbname"
                               value={integration.config.databaseUrl || ''}
                               onChange={(e) => {
                                 handleConfigChange(integration.id, 'databaseUrl', e.target.value)
@@ -592,11 +739,9 @@ export default function IntegrationsPage() {
                               )}
                             </Button>
                           </div>
-                          {integration.id === 'supabase' && (
-                            <p className="text-xs text-muted-foreground">
-                              Find this in Supabase Dashboard → Settings → Database → Connection string
-                            </p>
-                          )}
+                          <p className="text-xs text-muted-foreground">
+                            Your PostgreSQL connection string. Can use Supabase connection string.
+                          </p>
                         </div>
                       )}
 
@@ -676,6 +821,9 @@ export default function IntegrationsPage() {
                               </Button>
                             </div>
                           )}
+
+                          <Separator />
+
                           <div className="space-y-2">
                             <Label htmlFor={`supabase-service-${integration.id}`}>Service Role Key (Optional)</Label>
                             <div className="relative">
