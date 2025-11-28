@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@supabase/supabase-js'
 
 /**
  * Test Supabase database connection
@@ -32,7 +33,6 @@ export async function POST(request: Request) {
       )
     }
 
-    const { createClient } = await import('@supabase/supabase-js')
     const supabase = createClient(url, key, {
       auth: {
         autoRefreshToken: false,
