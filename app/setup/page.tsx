@@ -177,17 +177,23 @@ export default function SetupPage() {
         // Tables still don't exist
         setTablesVerified(false)
         toast.error('Tables not found', {
-          description: 'Please make sure you ran the SQL in Supabase SQL Editor and it completed successfully.',
-          duration: 10000
+          description: diagnosticData.recommendation || 'Please make sure you ran the SQL in Supabase SQL Editor and it completed successfully.',
+          duration: 15000
         })
         setErrorMessage(
-          `❌ Tables not found yet.\n\n` +
+          `❌ Tables Not Accessible\n\n` +
+          `Diagnostic Results:\n` +
+          (diagnosticData.diagnostics ? diagnosticData.diagnostics.map((d: any) => 
+            `${d.success ? '✅' : '❌'} ${d.step}${d.error ? `: ${d.error}` : ''}`
+          ).join('\n') : 'No diagnostics available') +
+          `\n\n` +
+          `Recommendation: ${diagnosticData.recommendation || data.error}\n\n` +
           `Please verify:\n` +
           `1. You copied the entire SQL (from CREATE TABLE to the end)\n` +
           `2. You clicked "Run" in Supabase SQL Editor\n` +
           `3. You saw a "Success" message\n` +
           `4. Check Supabase Table Editor to confirm tables exist\n\n` +
-          `If tables were created, click "Verify Tables" again.`
+          `If tables exist but you see permission errors, add Service Role Key and try again.`
         )
       } else {
         throw new Error(data.error || 'Failed to verify tables')

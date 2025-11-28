@@ -25,70 +25,151 @@ export async function POST(request: Request) {
     const sql = getDatabaseSchema()
     const projectId = projectUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || 'your-project'
     
-    // First, check if tables exist by trying to query them
-    // Use a simple SELECT query that should work if tables exist
+    // Comprehensive table detection with detailed logging
+    console.log('🔍 Starting table detection...')
+    console.log('Project URL:', projectUrl)
+    console.log('Using key type:', serviceRoleKey ? 'Service Role' : 'Anon/Publishable')
+    
     let tablesExist = false
     let tableCheckError: any = null
+    let permissionIssue = false
     
-    // Check integration_configs table
+    // Step 1: Try with the provided key (service role if available, otherwise anon)
+    console.log('📊 Step 1: Checking integration_configs table...')
     const { error: configCheckError, data: configCheckData } = await supabase
       .from('integration_configs')
       .select('id')
       .limit(1)
     
-    if (!configCheckError) {
-      // Table exists! Now check users table
+    if (configCheckError) {
+      console.log('❌ integration_configs check failed:', {
+        code: configCheckError.code,
+        message: configCheckError.message,
+        hint: configCheckError.code === '42501' ? 'Permission denied (RLS)' : 
+              configCheckError.code === 'PGRST116' || configCheckError.code === '42P01' ? 'Table not found' :
+              'Unknown error'
+      })
+      tableCheckError = configCheckError
+      
+      // Check if it's a permission issue
+      if (configCheckError.code === '42501' || 
+          configCheckError.message?.includes('permission denied') ||
+          configCheckError.message?.includes('RLS') ||
+          configCheckError.message?.includes('policy')) {
+        permissionIssue = true
+        console.log('🔒 Permission issue detected - RLS is blocking access')
+      }
+    } else {
+      console.log('✅ integration_configs table accessible')
+      
+      // Step 2: Check users table
+      console.log('📊 Step 2: Checking users table...')
       const { error: usersCheckError } = await supabase
         .from('users')
         .select('id')
         .limit(1)
       
-      if (!usersCheckError) {
-        // Both tables exist!
-        tablesExist = true
-      } else {
+      if (usersCheckError) {
+        console.log('❌ users check failed:', {
+          code: usersCheckError.code,
+          message: usersCheckError.message
+        })
         tableCheckError = usersCheckError
+        
+        if (usersCheckError.code === '42501' || 
+            usersCheckError.message?.includes('permission denied') ||
+            usersCheckError.message?.includes('RLS')) {
+          permissionIssue = true
+        }
+      } else {
+        console.log('✅ users table accessible')
+        tablesExist = true
+        console.log('✅✅ All tables verified!')
       }
-    } else {
-      tableCheckError = configCheckError
     }
     
-    // If tables don't exist, return SQL
+    // Step 3: If permission issue and no service role key, try with anon key
+    if (permissionIssue && !serviceRoleKey && anonKey) {
+      console.log('🔄 Step 3: Permission issue detected, but we already tried with anon key')
+      // We already tried with anon key, so we need service role key
+    }
+    
+    // If tables don't exist or permission issue, return appropriate response
     if (!tablesExist) {
+      console.log('⚠️ Tables not accessible:', {
+        tablesExist: false,
+        permissionIssue,
+        error: tableCheckError?.message,
+        code: tableCheckError?.code
+      })
+      
+      // Check if it's a permission error - might need service role key
+      if (permissionIssue && !serviceRoleKey) {
+        console.log('💡 Recommendation: Add Service Role Key to bypass RLS')
+        return NextResponse.json({
+          needsTable: false, // Tables exist, just blocked
+          permissionIssue: true,
+          sql: sql,
+          error: 'Permission denied. Tables exist but are blocked by Row Level Security (RLS).',
+          instructions: 'Your tables exist in Supabase, but RLS policies are blocking access with the Anon/Publishable key.',
+          sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+          details: tableCheckError?.message || 'RLS blocking access',
+          needsServiceRoleKey: true,
+          suggestion: 'Add your Service Role Key in the "Service Role Key (Optional)" field above, then click "Continue" again. Service Role Key bypasses RLS.',
+          diagnostic: {
+            tablesExist: true,
+            accessible: false,
+            reason: 'RLS policies blocking access',
+            solution: 'Use Service Role Key'
+          }
+        }, { status: 403 })
+      }
+      
+      // Check if tables actually don't exist
       const isTableMissing = tableCheckError?.code === 'PGRST116' || 
                             tableCheckError?.code === '42P01' ||
                             tableCheckError?.message?.includes('relation') ||
                             tableCheckError?.message?.includes('does not exist') ||
                             tableCheckError?.message?.includes('table') ||
-                            tableCheckError?.message?.includes('schema') ||
-                            tableCheckError?.message?.includes('permission denied') ||
-                            tableCheckError?.message?.includes('RLS')
+                            tableCheckError?.message?.includes('schema')
       
-      if (isTableMissing || tableCheckError) {
-        // Check if it's a permission error - might need service role key
-        if ((tableCheckError?.code === '42501' || tableCheckError?.message?.includes('permission') || tableCheckError?.message?.includes('RLS')) && !serviceRoleKey) {
-          return NextResponse.json({
-            needsTable: true,
-            sql: sql,
-            error: 'Permission denied. Tables might exist but are blocked by RLS.',
-            instructions: 'Please add your Service Role Key to bypass RLS, or verify tables exist in Supabase Table Editor.',
-            sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
-            details: tableCheckError.message,
-            needsServiceRoleKey: true,
-            suggestion: 'Add Service Role Key to check tables with proper permissions.'
-          }, { status: 400 })
-        }
-        
+      if (isTableMissing) {
+        console.log('💡 Recommendation: Tables do not exist - need to create them')
         return NextResponse.json({
           needsTable: true,
           sql: sql,
           error: 'Database tables not found. Please create them first.',
           instructions: 'Copy the SQL below and run it in Supabase SQL Editor',
           sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
-          details: tableCheckError?.message || 'Tables not found'
+          details: tableCheckError?.message || 'Tables not found',
+          diagnostic: {
+            tablesExist: false,
+            accessible: false,
+            reason: 'Tables do not exist',
+            solution: 'Run SQL schema'
+          }
         }, { status: 400 })
       }
+      
+      // Unknown error
+      console.log('❓ Unknown error type')
+      return NextResponse.json({
+        needsTable: true,
+        sql: sql,
+        error: 'Could not verify tables. Please check your credentials and try again.',
+        instructions: 'Verify tables exist in Supabase Table Editor, or run the SQL below to create them.',
+        sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+        details: tableCheckError?.message || 'Unknown error',
+        diagnostic: {
+          tablesExist: 'unknown',
+          accessible: false,
+          reason: tableCheckError?.message || 'Unknown error',
+          code: tableCheckError?.code
+        }
+      }, { status: 400 })
     }
+    
+    console.log('✅ Table detection complete - tables are accessible!')
     
     // Tables exist! Now try to save configuration
     const { error: saveError, data: saveData } = await supabase
@@ -111,6 +192,11 @@ export async function POST(request: Request) {
       .select()
 
     if (saveError) {
+      console.log('❌ Save error:', {
+        code: saveError.code,
+        message: saveError.message
+      })
+      
       // Check if it's a permission/RLS error
       const isPermissionError = saveError.code === '42501' || 
                                saveError.message?.includes('permission denied') ||
@@ -118,13 +204,21 @@ export async function POST(request: Request) {
                                saveError.message?.includes('policy')
       
       if (isPermissionError && !serviceRoleKey) {
+        console.log('🔒 Permission error - need service role key')
         return NextResponse.json({
           needsTable: false,
+          permissionIssue: true,
           error: 'Permission denied. RLS policies are blocking access.',
-          instructions: 'Please add your Service Role Key to bypass RLS, or update RLS policies to allow access.',
+          instructions: 'Tables exist but RLS is blocking. Add Service Role Key to bypass RLS.',
           details: saveError.message,
           needsServiceRoleKey: true,
-          suggestion: 'Add Service Role Key to save configuration with proper permissions.'
+          suggestion: 'Add Service Role Key in the setup form, then click "Continue" again.',
+          diagnostic: {
+            tablesExist: true,
+            accessible: false,
+            reason: 'RLS policies blocking access',
+            solution: 'Use Service Role Key'
+          }
         }, { status: 403 })
       }
       
