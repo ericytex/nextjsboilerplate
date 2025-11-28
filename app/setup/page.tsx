@@ -137,30 +137,58 @@ export default function SetupPage() {
       if (response.ok) {
         if (data.needsTable) {
           toast.error(data.error || 'Database tables not found', {
-            description: data.suggestion || 'Please create the tables first. Check the SQL below.',
+            description: 'Please create the tables using the SQL below. Click the error message to see full instructions.',
             duration: 20000
           })
+          
+          // Format the SQL nicely for display
+          const sqlText = data.sql || 'SQL not provided'
           setErrorMessage(
-            `${data.error || 'Database tables need to be created.'}\n\n` +
-            (data.suggestion ? `${data.suggestion}\n\n` : '') +
-            `Steps:\n` +
-            `1. Go to: ${data.sqlEditorUrl || 'Supabase Dashboard → SQL Editor'}\n` +
-            `2. Click "New Query"\n` +
-            `3. Copy and paste the SQL below:\n\n` +
-            `${data.sql}\n\n` +
-            `4. Click "Run" (or press Cmd/Ctrl + Enter)\n` +
-            `5. Come back here and click "Continue" again\n\n` +
-            (data.details ? `Error details: ${data.details}` : '')
+            `📋 ${data.error || 'Database tables need to be created.'}\n\n` +
+            (data.suggestion ? `💡 ${data.suggestion}\n\n` : '') +
+            `📝 Follow these steps:\n\n` +
+            `1️⃣ Open Supabase SQL Editor:\n   ${data.sqlEditorUrl || 'Go to Supabase Dashboard → SQL Editor → New Query'}\n\n` +
+            `2️⃣ Copy the SQL below (click to select all):\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            sqlText +
+            `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+            `3️⃣ Paste it into the SQL Editor\n\n` +
+            `4️⃣ Click "Run" (or press Cmd/Ctrl + Enter)\n\n` +
+            `5️⃣ Wait for "Success" message\n\n` +
+            `6️⃣ Come back here and click "Continue" again\n\n` +
+            (data.details ? `ℹ️ Technical details: ${data.details}\n` : '')
           )
         } else {
           toast.success('Database configured successfully!')
           setStep('admin')
         }
       } else {
-        // Show detailed error message
-        const errorMsg = data.error || 'Failed to save database config'
-        const details = data.details ? `\n\nDetails: ${data.details}` : ''
-        throw new Error(errorMsg + details)
+        // Handle non-200 responses that might also need tables
+        if (data.needsTable && data.sql) {
+          const sqlText = data.sql
+          toast.error(data.error || 'Database tables not found', {
+            description: 'Please create the tables using the SQL below.',
+            duration: 20000
+          })
+          setErrorMessage(
+            `📋 ${data.error || 'Database tables need to be created.'}\n\n` +
+            (data.suggestion ? `💡 ${data.suggestion}\n\n` : '') +
+            `📝 Follow these steps:\n\n` +
+            `1️⃣ Open Supabase SQL Editor:\n   ${data.sqlEditorUrl || 'Go to Supabase Dashboard → SQL Editor → New Query'}\n\n` +
+            `2️⃣ Copy the SQL below:\n\n` +
+            `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n` +
+            sqlText +
+            `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n` +
+            `3️⃣ Paste and run it in SQL Editor\n\n` +
+            `4️⃣ Return here and click "Continue" again\n\n` +
+            (data.details ? `ℹ️ ${data.details}\n` : '')
+          )
+        } else {
+          // Show detailed error message
+          const errorMsg = data.error || 'Failed to save database config'
+          const details = data.details ? `\n\nDetails: ${data.details}` : ''
+          throw new Error(errorMsg + details)
+        }
       }
     } catch (error: any) {
       toast.error(error.message || 'Failed to save database configuration')
@@ -360,8 +388,27 @@ export default function SetupPage() {
               </div>
 
               {errorMessage && (
-                <Alert variant="destructive">
-                  <AlertDescription className="whitespace-pre-wrap">{errorMessage}</AlertDescription>
+                <Alert variant="destructive" className="max-h-96 overflow-y-auto">
+                  <AlertDescription className="whitespace-pre-wrap font-mono text-sm">{errorMessage}</AlertDescription>
+                  {errorMessage.includes('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━') && (
+                    <div className="mt-4">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          const sqlMatch = errorMessage.match(/━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n([\s\S]*?)\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━/)
+                          if (sqlMatch && sqlMatch[1]) {
+                            navigator.clipboard.writeText(sqlMatch[1].trim())
+                            toast.success('SQL copied to clipboard!')
+                          }
+                        }}
+                        className="w-full"
+                      >
+                        📋 Copy SQL to Clipboard
+                      </Button>
+                    </div>
+                  )}
                 </Alert>
               )}
 
