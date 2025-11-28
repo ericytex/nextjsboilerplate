@@ -302,9 +302,11 @@ export default function SetupPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  <strong>New UI:</strong> Click "Connect" → App Frameworks → Next.js → Copy NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
+                  <strong>New UI:</strong> Click "Connect" → App Frameworks → Next.js → Copy the value of <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY</code>
                   <br />
-                  <strong>Old UI:</strong> Settings → API → anon/public key
+                  <strong>Old UI:</strong> Settings → API → anon/public key (this becomes <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>)
+                  <br />
+                  <span className="text-blue-600 dark:text-blue-400">✓ Both work the same - just different names in Supabase UI</span>
                 </p>
               </div>
 
