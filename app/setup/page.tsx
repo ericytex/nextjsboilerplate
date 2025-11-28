@@ -136,25 +136,31 @@ export default function SetupPage() {
 
       if (response.ok) {
         if (data.needsTable) {
-          toast.error('Database tables not found', {
-            description: 'Please create the tables first. Check the SQL below.',
-            duration: 15000
+          toast.error(data.error || 'Database tables not found', {
+            description: data.suggestion || 'Please create the tables first. Check the SQL below.',
+            duration: 20000
           })
           setErrorMessage(
-            `Database tables need to be created.\n\n` +
+            `${data.error || 'Database tables need to be created.'}\n\n` +
+            (data.suggestion ? `${data.suggestion}\n\n` : '') +
+            `Steps:\n` +
             `1. Go to: ${data.sqlEditorUrl || 'Supabase Dashboard → SQL Editor'}\n` +
             `2. Click "New Query"\n` +
             `3. Copy and paste the SQL below:\n\n` +
             `${data.sql}\n\n` +
             `4. Click "Run" (or press Cmd/Ctrl + Enter)\n` +
-            `5. Come back here and click "Continue" again`
+            `5. Come back here and click "Continue" again\n\n` +
+            (data.details ? `Error details: ${data.details}` : '')
           )
         } else {
           toast.success('Database configured successfully!')
           setStep('admin')
         }
       } else {
-        throw new Error(data.error || 'Failed to save database config')
+        // Show detailed error message
+        const errorMsg = data.error || 'Failed to save database config'
+        const details = data.details ? `\n\nDetails: ${data.details}` : ''
+        throw new Error(errorMsg + details)
       }
     } catch (error: any) {
       toast.error(error.message || 'Failed to save database configuration')

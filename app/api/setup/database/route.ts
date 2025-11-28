@@ -18,38 +18,16 @@ export async function POST(request: Request) {
     }
 
     // Use service role key if provided, otherwise use anon key
+    // Service role key bypasses RLS, which is needed for setup
     const key = serviceRoleKey || anonKey
     const supabase = createSupabaseClient(projectUrl, key)
 
-    // Try to create tables automatically
     const sql = getDatabaseSchema()
+    const projectId = projectUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || 'your-project'
     
-    // Execute SQL to create tables
-    // Note: Supabase doesn't have a direct SQL execution endpoint in the JS client
-    // So we'll try to create tables by attempting inserts/selects
-    // If that fails, return the SQL for manual execution
-    
-    // First, try to create integration_configs table by attempting an insert
-    const { error: configTableError } = await supabase
-      .from('integration_configs')
-      .select('id')
-      .limit(1)
-
-    if (configTableError && (configTableError.code === 'PGRST116' || configTableError.code === '42P01')) {
-      // Table doesn't exist - return SQL to create them
-      return NextResponse.json({
-        needsTable: true,
-        sql: sql,
-        error: 'Database tables not found. Please create them first.',
-        instructions: 'Copy the SQL below and run it in Supabase SQL Editor (Dashboard → SQL Editor → New Query)',
-        sqlEditorUrl: `${projectUrl.replace('https://', 'https://app.supabase.com/project/')}/sql/new`
-      }, { status: 400 })
-    }
-
-    // Tables exist - save configuration
-    // Try to save to integration_configs table
+    // Try to save configuration to integration_configs table
     // If table doesn't exist, we'll get an error and return SQL
-    const { error: saveError } = await supabase
+    const { error: saveError, data: saveData } = await supabase
       .from('integration_configs')
       .upsert({
         id: 'supabase',
@@ -66,42 +44,73 @@ export async function POST(request: Request) {
       }, {
         onConflict: 'id'
       })
+      .select()
 
     if (saveError) {
-      // If integration_configs doesn't exist, we need to create tables
-      if (saveError.code === 'PGRST116' || saveError.code === '42P01') {
-        const sql = getDatabaseSchema()
-        const projectId = projectUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || 'your-project'
-        
+      // Check if it's a "table doesn't exist" error
+      const isTableMissing = saveError.code === 'PGRST116' || 
+                            saveError.code === '42P01' ||
+                            saveError.message?.includes('relation') ||
+                            saveError.message?.includes('does not exist') ||
+                            saveError.message?.includes('table') ||
+                            saveError.message?.includes('schema')
+      
+      if (isTableMissing) {
         return NextResponse.json({
           needsTable: true,
           sql: sql,
           error: 'Database tables not found. Please create them first.',
           instructions: 'Copy the SQL below and run it in Supabase SQL Editor',
-          sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`
+          sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+          details: saveError.message
         }, { status: 400 })
       }
       
-      throw saveError
+      // Check if it's an RLS/permission error
+      if (saveError.code === '42501' || saveError.message?.includes('permission') || saveError.message?.includes('RLS')) {
+        return NextResponse.json({
+          needsTable: true,
+          sql: sql,
+          error: 'Permission denied. This might be because tables don\'t exist yet, or RLS is blocking access.',
+          instructions: 'Please create the tables first using the SQL below. If using anon key, you may need to use service role key for setup.',
+          sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+          details: saveError.message,
+          suggestion: serviceRoleKey ? 'Tables may not exist yet. Create them using the SQL below.' : 'Try using Service Role Key instead of Anon Key for setup.'
+        }, { status: 400 })
+      }
+      
+      // Other errors
+      console.error('Save error:', saveError)
+      return NextResponse.json({
+        needsTable: false,
+        error: 'Failed to save database configuration',
+        details: saveError.message,
+        code: saveError.code
+      }, { status: 500 })
     }
 
-    // Verify users table exists (required for admin creation)
+    // Successfully saved! Now verify users table exists (required for admin creation)
     const { error: usersTableError } = await supabase
       .from('users')
       .select('id')
       .limit(1)
 
-    if (usersTableError && (usersTableError.code === 'PGRST116' || usersTableError.code === '42P01')) {
-      const sql = getDatabaseSchema()
-      const projectId = projectUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || 'your-project'
+    if (usersTableError) {
+      const isTableMissing = usersTableError.code === 'PGRST116' || 
+                            usersTableError.code === '42P01' ||
+                            usersTableError.message?.includes('relation') ||
+                            usersTableError.message?.includes('does not exist')
       
-      return NextResponse.json({
-        needsTable: true,
-        sql: sql,
-        error: 'Users table not found. Please create all tables.',
-        instructions: 'Copy the SQL below and run it in Supabase SQL Editor',
-        sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`
-      }, { status: 400 })
+      if (isTableMissing) {
+        return NextResponse.json({
+          needsTable: true,
+          sql: sql,
+          error: 'Users table not found. Please create all tables.',
+          instructions: 'Copy the SQL below and run it in Supabase SQL Editor',
+          sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+          details: usersTableError.message
+        }, { status: 400 })
+      }
     }
 
     // Update environment variables (for this session)
