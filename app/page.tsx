@@ -207,7 +207,12 @@ export default function Home() {
 
             {/* Footer */}
             <footer className="text-text-light-secondary mt-24 border-t border-black/10 px-10 py-8 text-center">
-              <p>© 2024 StoryShort.ai. All rights reserved.</p>
+              <p className="text-sm">
+                © 2024 StoryShort.ai. Create viral videos effortlessly with AI-powered automation.
+              </p>
+              <p className="text-xs mt-2 text-text-light-secondary/70">
+                Transform your content into engaging videos for TikTok, YouTube, and beyond.
+              </p>
             </footer>
           </div>
         </div>
