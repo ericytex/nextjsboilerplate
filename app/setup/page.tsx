@@ -152,10 +152,27 @@ export default function SetupPage() {
         setTablesVerified(true)
         toast.success('✅ Tables verified! All database tables are created.')
         setConnectionStatus('success')
+        setErrorMessage('') // Clear any error messages
         // Automatically proceed to save config
         setTimeout(() => {
           saveDatabaseConfig()
         }, 1000)
+      } else if (data.needsServiceRoleKey) {
+        // Permission error - need service role key
+        setTablesVerified(false)
+        toast.warning('Service Role Key needed', {
+          description: 'Tables might exist but are blocked by RLS. Add Service Role Key to verify.',
+          duration: 10000
+        })
+        setErrorMessage(
+          `⚠️ Permission Error\n\n` +
+          `Tables might already exist, but Row Level Security (RLS) is blocking access.\n\n` +
+          `Solution:\n` +
+          `1. Add your Service Role Key in the "Service Role Key (Optional)" field above\n` +
+          `2. Click "Verify Tables Created" again\n\n` +
+          `Or check Supabase Table Editor to confirm tables exist.\n\n` +
+          `Error: ${data.details || data.error}`
+        )
       } else if (data.needsTable) {
         // Tables still don't exist
         setTablesVerified(false)
