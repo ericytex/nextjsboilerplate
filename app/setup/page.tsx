@@ -275,17 +275,19 @@ export default function SetupPage() {
                   onChange={(e) => setDatabaseConfig({ ...databaseConfig, projectUrl: e.target.value })}
                 />
                 <p className="text-xs text-muted-foreground">
-                  Found in Supabase Dashboard → Settings → API → Project URL
+                  <strong>New UI:</strong> Click "Connect" button at top → App Frameworks → Next.js → Copy SUPABASE_URL
+                  <br />
+                  <strong>Old UI:</strong> Settings → API → Project URL
                 </p>
               </div>
 
               <div className="space-y-2">
-                <Label htmlFor="anon-key">Anon/Public Key *</Label>
+                <Label htmlFor="anon-key">Publishable Key (Anon/Public Key) *</Label>
                 <div className="relative">
                   <Input
                     id="anon-key"
                     type={showServiceKey ? 'text' : 'password'}
-                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    placeholder="sb_publishable_... or eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                     value={databaseConfig.anonKey}
                     onChange={(e) => setDatabaseConfig({ ...databaseConfig, anonKey: e.target.value })}
                   />
@@ -300,7 +302,9 @@ export default function SetupPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  Found in Supabase Dashboard → Settings → API → anon/public key
+                  <strong>New UI:</strong> Click "Connect" → App Frameworks → Next.js → Copy NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY
+                  <br />
+                  <strong>Old UI:</strong> Settings → API → anon/public key
                 </p>
               </div>
 
@@ -310,7 +314,7 @@ export default function SetupPage() {
                   <Input
                     id="service-key"
                     type={showServiceKey ? 'text' : 'password'}
-                    placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+                    placeholder="sb_service_... or eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
                     value={databaseConfig.serviceRoleKey}
                     onChange={(e) => setDatabaseConfig({ ...databaseConfig, serviceRoleKey: e.target.value })}
                   />
@@ -325,6 +329,10 @@ export default function SetupPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
+                  <strong>New UI:</strong> Click "Connect" → App Frameworks → Next.js → Look for service_role key
+                  <br />
+                  <strong>Old UI:</strong> Settings → API → service_role key
+                  <br />
                   ⚠️ Keep this secret! Only for server-side operations.
                 </p>
               </div>

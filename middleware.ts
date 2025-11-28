@@ -25,11 +25,15 @@ export async function middleware(request: NextRequest) {
 
   // For all other paths, check if setup is needed
   // Check if Supabase is configured via environment variables
+  // Support both new (NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY) and old (NEXT_PUBLIC_SUPABASE_ANON_KEY) key names
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+  const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 
+                      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || 
+                      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   
-  // If no Supabase URL in environment, redirect to setup
+  // If no Supabase URL or key in environment, redirect to setup
   // The setup page will handle checking if database is actually configured
-  if (!supabaseUrl) {
+  if (!supabaseUrl || !supabaseKey) {
     return NextResponse.redirect(new URL('/setup', request.url))
   }
 

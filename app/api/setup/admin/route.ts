@@ -25,8 +25,11 @@ export async function POST(request: Request) {
     }
 
     // Get Supabase credentials from environment or saved config
+    // Support both new (NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY) and old (NEXT_PUBLIC_SUPABASE_ANON_KEY) key names
     let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-    let supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    let supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 
+                      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || 
+                      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
     // If not in env, try to get from saved integration config
     if (!supabaseUrl || !supabaseKey) {

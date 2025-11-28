@@ -31,9 +31,10 @@ export function createBrowserClient() {
 
 // Check if Supabase is configured
 export function isSupabaseConfigured(): boolean {
-  return !!(
-    process.env.NEXT_PUBLIC_SUPABASE_URL || 
-    process.env.SUPABASE_URL
-  )
+  const hasUrl = !!(process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL)
+  const hasKey = !!(process.env.SUPABASE_SERVICE_ROLE_KEY || 
+                    process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || 
+                    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY)
+  return hasUrl && hasKey
 }
 

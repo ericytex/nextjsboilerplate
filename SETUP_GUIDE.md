@@ -17,11 +17,25 @@ When you visit the application for the first time, you'll be automatically redir
 ### Step 2: Database Configuration
 
 1. **Enter Supabase Credentials:**
-   - **Project URL**: Found in Supabase Dashboard → Settings → API → Project URL
-     - Format: `https://[project-ref].supabase.co`
-   - **Anon/Public Key**: Found in Supabase Dashboard → Settings → API → anon/public key
-   - **Service Role Key** (Optional): For admin operations (keep secret!)
-   - **Database URL** (Optional): Connection string from Settings → Database
+
+   **Using the New Supabase UI (Recommended):**
+   - Open your Supabase project
+   - Click the **"Connect"** button at the top of the dashboard
+   - In the modal, select the **"App Frameworks"** tab
+   - Choose:
+     - Framework: **Next.js**
+     - Using: **App Router**
+     - With: **supabase-js**
+   - Copy the values from the `.env.local` snippet:
+     - **Project URL**: `NEXT_PUBLIC_SUPABASE_URL` (format: `https://[project-ref].supabase.co`)
+     - **Publishable Key**: `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY` (starts with `sb_publishable_...`)
+     - **Service Role Key** (Optional): Look for `service_role` key in the same modal or Settings → API
+
+   **Using the Old Supabase UI:**
+   - **Project URL**: Settings → API → Project URL
+   - **Anon/Public Key**: Settings → API → anon/public key
+   - **Service Role Key** (Optional): Settings → API → service_role key
+   - **Database URL** (Optional): Settings → Database → Connection string
 
 2. **Test Connection:**
    - Click "Test Connection" to verify your credentials
@@ -93,10 +107,18 @@ After initial setup:
 After setup, add these to your `.env.local` (or Vercel environment variables):
 
 ```env
+# New Supabase UI (recommended)
 NEXT_PUBLIC_SUPABASE_URL=https://[project-ref].supabase.co
-NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
-SUPABASE_SERVICE_ROLE_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY=sb_publishable_...
+
+# Service Role Key (optional, for admin operations)
+SUPABASE_SERVICE_ROLE_KEY=sb_service_...
+
+# Old Supabase UI (still supported)
+# NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
 ```
+
+**Note:** The application supports both the new key name (`NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY`) and the old key name (`NEXT_PUBLIC_SUPABASE_ANON_KEY`) for backward compatibility.
 
 **Note:** The setup flow saves these to the database, but environment variables are still recommended for optimal performance.
 
