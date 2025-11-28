@@ -64,7 +64,18 @@ export default function IntegrationsPage() {
     try {
       const response = await fetch('/api/settings/integrations')
       const data = await response.json()
-      setIntegrations(data.integrations || getDefaultIntegrations())
+      // Always use default integrations if API returns empty or no integrations
+      const defaultIntegrations = getDefaultIntegrations()
+      if (data.integrations && Array.isArray(data.integrations) && data.integrations.length > 0) {
+        // Merge API data with defaults, keeping API configs where they exist
+        const merged = defaultIntegrations.map(defaultInt => {
+          const apiInt = data.integrations.find((api: any) => api.id === defaultInt.id)
+          return apiInt ? { ...defaultInt, config: apiInt.config || defaultInt.config } : defaultInt
+        })
+        setIntegrations(merged)
+      } else {
+        setIntegrations(defaultIntegrations)
+      }
     } catch (error) {
       console.error('Failed to load integrations:', error)
       setIntegrations(getDefaultIntegrations())
@@ -547,15 +558,25 @@ export default function IntegrationsPage() {
                       </div>
                     </div>
                     <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <Label htmlFor={`toggle-${integration.id}`} className="text-sm">
-                          {integration.config.enabled ? 'Enabled' : 'Disabled'}
-                        </Label>
-                        <Switch
-                          id={`toggle-${integration.id}`}
-                          checked={integration.config.enabled}
-                          onCheckedChange={(checked) => handleToggle(integration.id, checked)}
-                        />
+                      <div className="flex flex-col items-end gap-2">
+                        <div className="flex items-center gap-2">
+                          <Label htmlFor={`toggle-${integration.id}`} className="text-sm font-medium">
+                            {integration.config.enabled ? (
+                              <span className="text-green-600 dark:text-green-400">Enabled</span>
+                            ) : (
+                              <span className="text-gray-500">Disabled</span>
+                            )}
+                          </Label>
+                          <Switch
+                            id={`toggle-${integration.id}`}
+                            checked={integration.config.enabled}
+                            onCheckedChange={(checked) => handleToggle(integration.id, checked)}
+                            className="data-[state=checked]:bg-green-600"
+                          />
+                        </div>
+                        {!integration.config.enabled && (
+                          <p className="text-xs text-muted-foreground">Toggle ON to configure</p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -1102,10 +1123,20 @@ export default function IntegrationsPage() {
           })}
         </div>
 
-        {filteredIntegrations.length === 0 && (
+        {filteredIntegrations.length === 0 && !loading && (
           <Card>
-            <CardContent className="py-12 text-center">
-              <p className="text-muted-foreground">No integrations found in this category.</p>
+            <CardContent className="py-12 text-center space-y-4">
+              <p className="text-muted-foreground text-lg font-medium">No integrations found in this category.</p>
+              <p className="text-sm text-muted-foreground">
+                Try selecting "All" to see all available integrations.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedCategory('All')}
+                className="mt-4"
+              >
+                Show All Integrations
+              </Button>
             </CardContent>
           </Card>
         )}
