@@ -45,7 +45,7 @@ export default function Home() {
             <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="#features">Features</a>
             <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="/pricing">Pricing</a>
             <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="#blog">Resources</a>
-            <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="#">Sign in</a>
+            <Link href="/signin" className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors">Sign in</Link>
             <Button asChild className="h-9 px-4 bg-yellow-DEFAULT text-gray-900 text-sm font-bold hover:bg-yellow-dark transition-all no-underline">
               <Link href="/signup" className="no-underline">Start Free Trial</Link>
             </Button>
