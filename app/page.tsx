@@ -66,12 +66,12 @@ export default function Home() {
 
               {/* Headline */}
               <h1 className="text-5xl lg:text-6xl xl:text-7xl font-black leading-[1.1] text-gray-900">
-                Create viral <span className="text-yellow-DEFAULT">faceless videos</span> in minutes with AI—<span className="text-yellow-DEFAULT">no recording needed</span>.
+                Create viral <span className="text-yellow-DEFAULT">faceless videos</span> in minutes—<span className="text-yellow-DEFAULT">no recording needed</span>.
               </h1>
 
               {/* Subheadline */}
               <p className="text-lg lg:text-xl text-gray-600 max-w-xl leading-relaxed">
-                Generate engaging short-form videos for YouTube Shorts, TikTok, and Instagram Reels. From prompt to published video in minutes—completely automated.
+                From prompt to published video in minutes. YouTube Shorts, TikTok, Instagram Reels—fully automated.
               </p>
 
               {/* CTA Buttons */}
