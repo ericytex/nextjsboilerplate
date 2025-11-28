@@ -139,55 +139,81 @@ export default function SetupPage() {
     setErrorMessage('')
 
     try {
+      // First, run comprehensive diagnostics
+      let diagnosticData: any = null
+      try {
+        const diagnosticResponse = await fetch('/api/setup/check-tables', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectUrl: projectUrl,
+            anonKey: anonKey,
+            serviceRoleKey: databaseConfig.serviceRoleKey?.trim() || ''
+          })
+        })
+        diagnosticData = await diagnosticResponse.json()
+        console.log('📊 Table Diagnostics:', diagnosticData)
+      } catch (diagError) {
+        console.warn('Diagnostics failed, continuing with regular check:', diagError)
+      }
+
+      // Now try to save config
       const response = await fetch('/api/setup/database', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(databaseConfig)
+        body: JSON.stringify({
+          projectUrl: projectUrl,
+          anonKey: anonKey,
+          serviceRoleKey: databaseConfig.serviceRoleKey?.trim() || '',
+          databaseUrl: databaseConfig.databaseUrl?.trim() || ''
+        })
       })
 
       const data = await response.json()
 
-      if (response.ok && !data.needsTable) {
-        // Tables exist!
+      if (response.ok && !data.needsTable && !data.permissionIssue) {
+        // Tables exist and are accessible!
         setTablesVerified(true)
-        toast.success('✅ Tables verified! All database tables are created.')
+        toast.success('✅ Tables verified! All database tables are accessible.')
         setConnectionStatus('success')
         setErrorMessage('') // Clear any error messages
         // Automatically proceed to save config
         setTimeout(() => {
           saveDatabaseConfig()
         }, 1000)
-      } else if (data.needsServiceRoleKey) {
+      } else if (data.permissionIssue || data.needsServiceRoleKey) {
         // Permission error - need service role key
         setTablesVerified(false)
-        toast.warning('Service Role Key needed', {
-          description: 'Tables might exist but are blocked by RLS. Add Service Role Key to verify.',
-          duration: 10000
+        toast.warning('Permission Issue Detected', {
+          description: 'Tables exist but RLS is blocking access. Add Service Role Key to proceed.',
+          duration: 15000
         })
         setErrorMessage(
-          `⚠️ Permission Error\n\n` +
-          `Tables might already exist, but Row Level Security (RLS) is blocking access.\n\n` +
-          `Solution:\n` +
+          `🔒 Permission Issue Detected\n\n` +
+          `✅ Good news: Your tables exist in Supabase!\n` +
+          `❌ Problem: Row Level Security (RLS) is blocking access with the Anon/Publishable key.\n\n` +
+          `💡 Solution:\n` +
           `1. Add your Service Role Key in the "Service Role Key (Optional)" field above\n` +
           `2. Click "Verify Tables Created" again\n\n` +
-          `Or check Supabase Table Editor to confirm tables exist.\n\n` +
-          `Error: ${data.details || data.error}`
+          `The Service Role Key bypasses RLS and allows setup to complete.\n\n` +
+          `Diagnostic: ${diagnosticData?.recommendation || data.details || data.error}\n\n` +
+          (diagnosticData?.diagnostics ? `Details:\n${diagnosticData.diagnostics.map((d: any) => `- ${d.step}: ${d.error || 'OK'}`).join('\n')}` : '')
         )
       } else if (data.needsTable) {
         // Tables still don't exist
         setTablesVerified(false)
         toast.error('Tables not found', {
-          description: diagnosticData.recommendation || 'Please make sure you ran the SQL in Supabase SQL Editor and it completed successfully.',
+          description: diagnosticData?.recommendation || 'Please make sure you ran the SQL in Supabase SQL Editor and it completed successfully.',
           duration: 15000
         })
         setErrorMessage(
           `❌ Tables Not Accessible\n\n` +
           `Diagnostic Results:\n` +
-          (diagnosticData.diagnostics ? diagnosticData.diagnostics.map((d: any) => 
+          (diagnosticData?.diagnostics ? diagnosticData.diagnostics.map((d: any) => 
             `${d.success ? '✅' : '❌'} ${d.step}${d.error ? `: ${d.error}` : ''}`
           ).join('\n') : 'No diagnostics available') +
           `\n\n` +
-          `Recommendation: ${diagnosticData.recommendation || data.error}\n\n` +
+          `Recommendation: ${diagnosticData?.recommendation || data.error}\n\n` +
           `Please verify:\n` +
           `1. You copied the entire SQL (from CREATE TABLE to the end)\n` +
           `2. You clicked "Run" in Supabase SQL Editor\n` +
