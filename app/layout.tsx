@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { Manrope } from 'next/font/google'
+import { Toaster } from '@/components/ui/sonner'
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -28,6 +29,7 @@ export default function RootLayout({
       </head>
       <body className={manrope.variable}>
         {children}
+        <Toaster />
       </body>
     </html>
   )
