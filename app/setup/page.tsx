@@ -125,6 +125,7 @@ export default function SetupPage() {
     }
 
     setLoading(true)
+    setErrorMessage('') // Clear previous errors
     try {
       const response = await fetch('/api/setup/database', {
         method: 'POST',

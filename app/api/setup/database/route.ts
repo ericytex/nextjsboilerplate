@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     const projectId = projectUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || 'your-project'
     
     // Try to save configuration to integration_configs table
-    // If table doesn't exist, we'll get an error and return SQL
+    // If table doesn't exist, we'll try to create tables automatically
     const { error: saveError, data: saveData } = await supabase
       .from('integration_configs')
       .upsert({
@@ -56,14 +56,82 @@ export async function POST(request: Request) {
                             saveError.message?.includes('schema')
       
       if (isTableMissing) {
-        return NextResponse.json({
-          needsTable: true,
-          sql: sql,
-          error: 'Database tables not found. Please create them first.',
-          instructions: 'Copy the SQL below and run it in Supabase SQL Editor',
-          sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
-          details: saveError.message
-        }, { status: 400 })
+        // Try to automatically create tables using Management API
+        // This requires service role key
+        if (serviceRoleKey) {
+          try {
+            const createResult = await createTablesAutomatically(projectUrl, serviceRoleKey, projectId, sql)
+            if (createResult.success) {
+              // Tables created! Now try to save config again
+              const { error: retryError } = await supabase
+                .from('integration_configs')
+                .upsert({
+                  id: 'supabase',
+                  config: {
+                    enabled: true,
+                    customSettings: {
+                      projectUrl,
+                      anonKey,
+                      serviceRoleKey: serviceRoleKey || '',
+                      databaseUrl: databaseUrl || ''
+                    }
+                  },
+                  updated_at: new Date().toISOString()
+                }, {
+                  onConflict: 'id'
+                })
+              
+              if (!retryError) {
+                // Success! Continue to verify users table
+                // (will be checked below)
+              } else {
+                // Still failed, return SQL for manual creation
+                return NextResponse.json({
+                  needsTable: true,
+                  sql: sql,
+                  error: 'Failed to create tables automatically. Please create them manually.',
+                  instructions: 'Copy the SQL below and run it in Supabase SQL Editor',
+                  sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+                  details: retryError.message,
+                  autoCreateFailed: true
+                }, { status: 400 })
+              }
+            } else {
+              // Auto-create failed, return SQL
+              return NextResponse.json({
+                needsTable: true,
+                sql: sql,
+                error: 'Could not create tables automatically. Please create them manually.',
+                instructions: 'Copy the SQL below and run it in Supabase SQL Editor',
+                sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+                details: createResult.error || 'Unknown error',
+                autoCreateFailed: true
+              }, { status: 400 })
+            }
+          } catch (autoCreateError: any) {
+            // Auto-create failed, return SQL for manual creation
+            return NextResponse.json({
+              needsTable: true,
+              sql: sql,
+              error: 'Could not create tables automatically. Please create them manually.',
+              instructions: 'Copy the SQL below and run it in Supabase SQL Editor',
+              sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+              details: autoCreateError.message || 'Unknown error',
+              autoCreateFailed: true
+            }, { status: 400 })
+          }
+        } else {
+          // No service role key, return SQL for manual creation
+          return NextResponse.json({
+            needsTable: true,
+            sql: sql,
+            error: 'Database tables not found. Please create them first.',
+            instructions: 'Copy the SQL below and run it in Supabase SQL Editor. Or add Service Role Key to enable automatic creation.',
+            sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+            details: saveError.message,
+            needsServiceRoleKey: true
+          }, { status: 400 })
+        }
       }
       
       // Check if it's an RLS/permission error
@@ -135,6 +203,32 @@ export async function POST(request: Request) {
       },
       { status: 500 }
     )
+  }
+}
+
+/**
+ * Attempt to automatically create tables
+ * Note: Supabase doesn't support executing arbitrary SQL via REST API for security reasons.
+ * This function is a placeholder for future implementation using Supabase Edge Functions
+ * or Management API when available.
+ */
+async function createTablesAutomatically(
+  projectUrl: string,
+  serviceRoleKey: string,
+  projectId: string,
+  sql: string
+): Promise<{ success: boolean; error?: string }> {
+  // Supabase doesn't currently support executing arbitrary SQL via REST API
+  // This would require:
+  // 1. Supabase Edge Function with database access
+  // 2. Direct PostgreSQL connection (requires pg library)
+  // 3. Supabase Management API (requires special access tokens)
+  
+  // For now, we'll return false and provide clear instructions
+  // Future enhancement: Create a Supabase Edge Function that can execute SQL
+  return {
+    success: false,
+    error: 'Automatic table creation requires manual SQL execution. Supabase doesn\'t support arbitrary SQL execution via REST API for security reasons. Please use the SQL Editor.'
   }
 }
 
