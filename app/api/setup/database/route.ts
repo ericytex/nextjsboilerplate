@@ -371,18 +371,22 @@ CREATE INDEX IF NOT EXISTS idx_activity_logs_created_at ON activity_logs(created
 
 -- Create policies (adjust based on your security needs)
 -- For now, allow service role to do everything (you should restrict this in production)
+-- Note: DROP IF EXISTS to avoid errors if policies already exist
 
 -- Integration configs: Only service role can access
+DROP POLICY IF EXISTS "Service role can manage integration configs" ON integration_configs;
 CREATE POLICY "Service role can manage integration configs" 
 ON integration_configs FOR ALL 
 USING (true) 
 WITH CHECK (true);
 
 -- Users: Users can read/update their own data, admins can do everything
+DROP POLICY IF EXISTS "Users can read own data" ON users;
 CREATE POLICY "Users can read own data" 
 ON users FOR SELECT 
 USING (auth.uid() = id OR (SELECT role FROM users WHERE id = auth.uid()) = 'admin');
 
+DROP POLICY IF EXISTS "Users can update own data" ON users;
 CREATE POLICY "Users can update own data" 
 ON users FOR UPDATE 
 USING (auth.uid() = id OR (SELECT role FROM users WHERE id = auth.uid()) = 'admin');
