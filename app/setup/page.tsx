@@ -348,7 +348,27 @@ export default function SetupPage() {
       return
     }
 
+    // Check if Service Role Key is provided (required for admin creation)
+    if (!databaseConfig.serviceRoleKey?.trim()) {
+      toast.error('Service Role Key Required', {
+        description: 'Admin user creation requires Service Role Key to bypass RLS. Please add it in the database setup step.',
+        duration: 10000
+      })
+      setErrorMessage(
+        `🔑 Service Role Key Required\n\n` +
+        `Admin user creation requires Service Role Key to bypass Row Level Security (RLS) policies.\n\n` +
+        `Please:\n` +
+        `1. Go back to the Database Setup step\n` +
+        `2. Add your Service Role Key in the "Service Role Key (Optional)" field\n` +
+        `3. Click "Continue" to save the configuration\n` +
+        `4. Then try creating the admin user again\n\n` +
+        `The Service Role Key bypasses RLS and allows admin user creation.`
+      )
+      return
+    }
+
     setLoading(true)
+    setErrorMessage('')
     try {
       const response = await fetch('/api/setup/admin', {
         method: 'POST',
@@ -371,10 +391,27 @@ export default function SetupPage() {
           router.push('/dashboard')
         }, 2000)
       } else {
-        throw new Error(data.error || 'Failed to create admin user')
+        if (data.needsServiceRoleKey) {
+          toast.error('Service Role Key Required', {
+            description: data.details || 'Please add Service Role Key in database setup step.',
+            duration: 10000
+          })
+          setErrorMessage(
+            `🔑 Service Role Key Required\n\n` +
+            `${data.details || 'Admin user creation requires Service Role Key to bypass RLS policies.'}\n\n` +
+            `Please:\n` +
+            `1. Go back to the Database Setup step\n` +
+            `2. Add your Service Role Key in the "Service Role Key (Optional)" field\n` +
+            `3. Click "Continue" to save the configuration\n` +
+            `4. Then try creating the admin user again`
+          )
+        } else {
+          throw new Error(data.error || 'Failed to create admin user')
+        }
       }
     } catch (error: any) {
       toast.error(error.message || 'Failed to create admin user')
+      setErrorMessage(error.message || 'Failed to create admin user')
     } finally {
       setLoading(false)
     }
