@@ -155,73 +155,53 @@ export default function Home() {
                   <h2 className="text-text-light text-4xl font-black leading-tight tracking-[-0.033em]">Choose Your Plan</h2>
                   <p className="text-text-light-secondary text-lg font-normal leading-normal max-w-2xl">Simple, transparent pricing to get you started on your next big idea.</p>
                 </div>
-                <div className="grid md:grid-cols-3 gap-8 w-full max-w-4xl">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 w-full max-w-7xl">
+                  {/* Free Plan */}
                   <div className="flex flex-col p-6 rounded-xl border border-black/10 bg-white">
                     <h3 className="text-text-light text-lg font-bold">Free</h3>
-                    <p className="text-text-light-secondary mt-2">For personal projects & learning.</p>
                     <p className="text-text-light text-4xl font-black mt-4">$0</p>
-                    <ul className="flex flex-col gap-3 mt-6 text-text-light/90 text-sm flex-grow">
-                      <li className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-green-500">check_circle</span> Basic Features
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-green-500">check_circle</span> Community Support
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-green-500">check_circle</span> Free for you, we cover the cost
-                      </li>
-                    </ul>
-                    <Button asChild variant="outline" className="w-full mt-8 h-10 px-4 bg-black/[.08] text-text-light text-sm font-bold leading-normal tracking-[0.015em] hover:bg-black/10 border-0">
-                      <Link href="/pricing">Get Started</Link>
+                    <p className="text-text-light-secondary text-sm mt-2 italic">Free for you, we cover the cost</p>
+                    <Button asChild variant="outline" className="w-full mt-8 h-10 px-4 bg-black/[.08] text-text-light text-sm font-bold leading-normal tracking-[0.015em] hover:bg-black/10 border-0 no-underline">
+                      <Link href="/pricing" className="no-underline">Get Started</Link>
                     </Button>
                   </div>
+
+                  {/* Basic Plan */}
+                  <div className="flex flex-col p-6 rounded-xl border border-black/10 bg-white">
+                    <h3 className="text-text-light text-lg font-bold">Basic</h3>
+                    <p className="text-text-light text-4xl font-black mt-4">$20</p>
+                    <Button asChild variant="outline" className="w-full mt-8 h-10 px-4 bg-black/[.08] text-text-light text-sm font-bold leading-normal tracking-[0.015em] hover:bg-black/10 border-0 no-underline">
+                      <Link href="/pricing" className="no-underline">Choose Basic</Link>
+                    </Button>
+                  </div>
+
+                  {/* Pro Plan - Most Popular */}
                   <div className="flex flex-col p-6 rounded-xl border-2 border-primary bg-primary/5 relative">
                     <div className="absolute top-0 -translate-y-1/2 left-1/2 -translate-x-1/2 bg-primary text-white text-xs font-bold px-3 py-1 rounded-full uppercase">Most Popular</div>
                     <h3 className="text-text-light text-lg font-bold">Pro</h3>
-                    <p className="text-text-light-secondary mt-2">For startups and businesses.</p>
                     <p className="text-text-light text-4xl font-black mt-4">$40</p>
-                    <ul className="flex flex-col gap-3 mt-6 text-text-light/90 text-sm flex-grow">
-                      <li className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-green-500">check_circle</span> All Pro Features
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-green-500">check_circle</span> Creem.io Integration
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-green-500">check_circle</span> Priority Support
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-green-500">check_circle</span> Dashboard Access
-                      </li>
-                    </ul>
-                    <Button asChild className="w-full mt-8 h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90">
-                      <Link href="/pricing">Choose Plan</Link>
+                    <Button asChild className="w-full mt-8 h-10 px-4 bg-primary text-white text-sm font-bold leading-normal tracking-[0.015em] hover:bg-primary/90 no-underline">
+                      <Link href="/pricing" className="no-underline">Choose Pro</Link>
                     </Button>
                   </div>
+
+                  {/* Business Plan */}
+                  <div className="flex flex-col p-6 rounded-xl border border-black/10 bg-white">
+                    <h3 className="text-text-light text-lg font-bold">Business</h3>
+                    <p className="text-text-light text-4xl font-black mt-4">$100</p>
+                    <Button asChild variant="outline" className="w-full mt-8 h-10 px-4 bg-black/[.08] text-text-light text-sm font-bold leading-normal tracking-[0.015em] hover:bg-black/10 border-0 no-underline">
+                      <Link href="/pricing" className="no-underline">Choose Business</Link>
+                    </Button>
+                  </div>
+
+                  {/* Enterprise Plan */}
                   <div className="flex flex-col p-6 rounded-xl border border-black/10 bg-white">
                     <h3 className="text-text-light text-lg font-bold">Enterprise</h3>
-                    <p className="text-text-light-secondary mt-2">For large scale applications.</p>
-                    <p className="text-text-light text-4xl font-black mt-4">Let&apos;s Talk</p>
-                    <ul className="flex flex-col gap-3 mt-6 text-text-light/90 text-sm flex-grow">
-                      <li className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-green-500">check_circle</span> Custom Features
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-green-500">check_circle</span> Dedicated Support
-                      </li>
-                      <li className="flex items-center gap-3">
-                        <span className="material-symbols-outlined text-green-500">check_circle</span> SLA & Onboarding
-                      </li>
-                    </ul>
-                    <Button asChild variant="outline" className="w-full mt-8 h-10 px-4 bg-black/[.08] text-text-light text-sm font-bold leading-normal tracking-[0.015em] hover:bg-black/10 border-0">
-                      <Link href="/contact">Contact Us</Link>
+                    <p className="text-text-light text-4xl font-black mt-4">Custom</p>
+                    <Button asChild variant="outline" className="w-full mt-8 h-10 px-4 bg-black/[.08] text-text-light text-sm font-bold leading-normal tracking-[0.015em] hover:bg-black/10 border-0 no-underline">
+                      <Link href="/contact" className="no-underline">Contact Us</Link>
                     </Button>
                   </div>
-                </div>
-                <div className="text-center mt-4">
-                  <p className="text-text-light-secondary text-sm">
-                    Also available: <Link href="/pricing" className="text-primary hover:underline font-medium">Basic ($20)</Link> and <Link href="/pricing" className="text-primary hover:underline font-medium">Business ($100)</Link> plans
-                  </p>
                 </div>
               </div>
             </main>
