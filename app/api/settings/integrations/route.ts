@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { createServerClient, isSupabaseConfigured } from '@/lib/supabase'
+import { createSupabaseClient } from '@/lib/supabase-client'
 
 // Fallback in-memory store if Supabase is not configured
+// This is only used temporarily until Supabase is set up
 let integrationsStore: Record<string, any> = {}
 
 export async function GET() {
@@ -55,12 +57,18 @@ export async function POST(request: Request) {
       )
     }
 
-    // Try to save to Supabase if configured
-    if (isSupabaseConfigured() && config.enabled) {
+    // Special handling for Supabase configuration (chicken-and-egg problem)
+    // If user is configuring Supabase itself, use the credentials from the form
+    if (integrationId === 'supabase' && config.enabled && config.customSettings?.projectUrl && config.customSettings?.anonKey) {
       try {
-        const supabase = createServerClient()
-        
-        // Save to Supabase
+        // Use form credentials directly to save Supabase config to Supabase
+        const supabase = createSupabaseClient(
+          config.customSettings.projectUrl,
+          config.customSettings.anonKey
+        )
+
+        // First, ensure the table exists by trying to create it
+        // If it doesn't exist, we'll get an error but that's okay - user needs to run SQL
         const { data: supabaseData, error: supabaseError } = await supabase
           .from('integration_configs')
           .upsert({
@@ -74,21 +82,72 @@ export async function POST(request: Request) {
           .single()
 
         if (!supabaseError && supabaseData) {
-          // Also update environment variables if this is Supabase itself
-          if (integrationId === 'supabase' && config.customSettings?.projectUrl) {
-            console.log('Supabase integration configured. Update your environment variables:')
-            console.log('NEXT_PUBLIC_SUPABASE_URL:', config.customSettings.projectUrl)
-            console.log('NEXT_PUBLIC_SUPABASE_ANON_KEY:', config.customSettings.anonKey)
-          }
-
+          // Successfully saved to Supabase! Now all future configs will use Supabase
           return NextResponse.json({
             success: true,
-            message: 'Integration configuration saved to Supabase',
+            message: '✅ Supabase configured and saved to database! All future configurations will be persisted.',
             integration: {
               id: supabaseData.id,
               config: supabaseData.config,
               updatedAt: supabaseData.updated_at
-            }
+            },
+            persisted: true
+          })
+        } else if (supabaseError?.code === '42P01' || supabaseError?.code === 'PGRST116') {
+          // Table doesn't exist - user needs to create it
+          return NextResponse.json({
+            success: false,
+            error: 'Database table not found',
+            message: 'Please create the integration_configs table in Supabase. See setup instructions.',
+            needsTable: true,
+            sql: `CREATE TABLE IF NOT EXISTS integration_configs (
+  id TEXT PRIMARY KEY,
+  config JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);`
+          }, { status: 400 })
+        } else {
+          throw supabaseError
+        }
+      } catch (error: any) {
+        console.error('Error saving Supabase config:', error)
+        return NextResponse.json({
+          success: false,
+          error: 'Failed to save to Supabase',
+          message: error.message || 'Please check your credentials and try again',
+          details: error
+        }, { status: 500 })
+      }
+    }
+
+    // For all other integrations, try to use Supabase if configured
+    if (isSupabaseConfigured() && config.enabled) {
+      try {
+        const supabase = createServerClient()
+        
+        const { data: supabaseData, error: supabaseError } = await supabase
+          .from('integration_configs')
+          .upsert({
+            id: integrationId,
+            config: config,
+            updated_at: new Date().toISOString()
+          }, {
+            onConflict: 'id'
+          })
+          .select()
+          .single()
+
+        if (!supabaseError && supabaseData) {
+          return NextResponse.json({
+            success: true,
+            message: 'Integration configuration saved to Supabase database',
+            integration: {
+              id: supabaseData.id,
+              config: supabaseData.config,
+              updatedAt: supabaseData.updated_at
+            },
+            persisted: true
           })
         }
       } catch (supabaseError) {
@@ -96,7 +155,7 @@ export async function POST(request: Request) {
       }
     }
 
-    // Fallback to in-memory store
+    // Fallback to in-memory store (temporary, until Supabase is configured)
     integrationsStore[integrationId] = {
       id: integrationId,
       config,
@@ -113,8 +172,12 @@ export async function POST(request: Request) {
 
     return NextResponse.json({
       success: true,
-      message: 'Integration configuration saved successfully',
-      integration: integrationsStore[integrationId]
+      message: integrationId === 'supabase' 
+        ? '⚠️ Configuration saved temporarily. Configure Supabase first to enable database persistence.'
+        : '⚠️ Configuration saved temporarily. Set up Supabase database to persist configurations.',
+      integration: integrationsStore[integrationId],
+      persisted: false,
+      warning: 'This configuration is stored in memory and will be lost on server restart. Configure Supabase database for persistence.'
     })
   } catch (error) {
     console.error('Error saving integration:', error)

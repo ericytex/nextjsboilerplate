@@ -277,7 +277,53 @@ export default function IntegrationsPage() {
         : integration
     ))
     
-    await saveIntegration(integrationId, { enabled })
+    // Get the full config for this integration and save
+    const integration = integrations.find(i => i.id === integrationId)
+    if (integration) {
+      const updatedConfig = { ...integration.config, enabled }
+      const result = await saveIntegration(integrationId, updatedConfig)
+      // Show appropriate message based on persistence
+      if (result?.persisted) {
+        toast.success(`${integration.name} ${enabled ? 'enabled' : 'disabled'}`)
+      }
+    }
+  }
+
+  const handleSave = async (integrationId: string) => {
+    const integration = integrations.find(i => i.id === integrationId)
+    if (!integration) return
+
+    const result = await saveIntegration(integrationId, integration.config)
+    
+    // Show special message for Supabase setup
+    if (integrationId === 'supabase' && result?.needsTable) {
+      toast.error('Database table not found. Please create it first.', {
+        description: 'Check DATABASE_SETUP.md for SQL schema',
+        duration: 10000,
+        action: {
+          label: 'View SQL',
+          onClick: () => {
+            // Copy SQL to clipboard
+            const sql = `CREATE TABLE IF NOT EXISTS integration_configs (
+  id TEXT PRIMARY KEY,
+  config JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);`
+            navigator.clipboard.writeText(sql)
+            toast.success('SQL copied to clipboard!')
+          }
+        }
+      })
+    } else if (integrationId === 'supabase' && result?.persisted) {
+      toast.success('🎉 Supabase configured! All configurations will now persist to database.', {
+        duration: 5000
+      })
+    } else if (!result?.persisted && integrationId !== 'supabase') {
+      toast.warning('Configuration saved temporarily. Set up Supabase database for persistence.', {
+        duration: 5000
+      })
+    }
   }
 
   const handleConfigChange = (integrationId: string, field: string, value: any) => {
@@ -388,40 +434,36 @@ export default function IntegrationsPage() {
     }
   }
 
-  const saveIntegration = async (integrationId: string, updates: Partial<IntegrationConfig>) => {
+  const saveIntegration = async (integrationId: string, config: IntegrationConfig) => {
     setSaving(integrationId)
 
     try {
       const integration = integrations.find(i => i.id === integrationId)
-      if (!integration) return
+      if (!integration) return null
 
       const response = await fetch('/api/settings/integrations', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           integrationId,
-          config: { ...integration.config, ...updates }
+          config
         })
       })
 
+      const data = await response.json()
+
       if (response.ok) {
-        toast.success(`${integration.name} configuration saved`)
+        // Don't show toast here - handleSave will show appropriate message
+        return data
       } else {
-        throw new Error('Failed to save')
+        throw new Error(data.error || 'Failed to save')
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to save integration:', error)
-      toast.error('Failed to save configuration')
+      return { error: error.message, persisted: false }
     } finally {
       setSaving(null)
     }
-  }
-
-  const handleSave = async (integrationId: string) => {
-    const integration = integrations.find(i => i.id === integrationId)
-    if (!integration) return
-
-    await saveIntegration(integrationId, integration.config)
   }
 
   const toggleSecretVisibility = (integrationId: string, field: string) => {
