@@ -45,19 +45,37 @@ export default function SetupPage() {
   const checkSetupStatus = async () => {
     try {
       const response = await fetch('/api/setup/status', { cache: 'no-store' })
+      
+      if (!response.ok) {
+        // API error - continue with setup
+        console.log('Setup status check failed:', response.status)
+        return
+      }
+      
       const data = await response.json()
       
       if (data.setupComplete) {
         // Setup already done, redirect to dashboard
         toast.info('Setup already complete. Redirecting...')
-        router.push('/dashboard')
+        setTimeout(() => {
+          router.push('/dashboard')
+        }, 1000)
       } else if (data.needsAdmin) {
         // Database configured but no admin - go to admin step
         setStep('admin')
+      } else if (data.needsTables) {
+        // Database configured but tables don't exist
+        // Stay on database step
+        setStep('database')
+      } else if (data.needsSetup) {
+        // No Supabase configured - stay on database step
+        setStep('database')
       }
     } catch (error) {
       // Setup not complete, continue with setup flow
-      console.log('Setup check:', error)
+      console.log('Setup check error:', error)
+      // Stay on database step
+      setStep('database')
     }
   }
 

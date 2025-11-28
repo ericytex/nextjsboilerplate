@@ -24,18 +24,42 @@ export async function POST(request: Request) {
       )
     }
 
-    // Get Supabase credentials from environment or integration config
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-    const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    // Get Supabase credentials from environment or saved config
+    let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+    let supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
+    // If not in env, try to get from saved integration config
     if (!supabaseUrl || !supabaseKey) {
+      // Try to get from integration_configs if it exists
+      // First, we need at least the URL to connect
+      if (!supabaseUrl) {
+        return NextResponse.json(
+          { error: 'Supabase not configured. Please set up database first in the setup page.' },
+          { status: 400 }
+        )
+      }
+      
+      // Try with anon key if we have URL
+      if (supabaseUrl && !supabaseKey) {
+        // We can't proceed without a key
+        return NextResponse.json(
+          { error: 'Supabase API key not found. Please complete database setup first.' },
+          { status: 400 }
+        )
+      }
+    }
+
+    // Use service role key if available, otherwise anon key
+    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseKey
+    
+    if (!supabaseUrl || !key) {
       return NextResponse.json(
-        { error: 'Supabase not configured. Please set up database first.' },
+        { error: 'Supabase credentials incomplete. Please complete database setup first.' },
         { status: 400 }
       )
     }
 
-    const supabase = createSupabaseClient(supabaseUrl, supabaseKey)
+    const supabase = createSupabaseClient(supabaseUrl, key)
 
     // Check if admin already exists
     const { data: existingAdmins, error: checkError } = await supabase

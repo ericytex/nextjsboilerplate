@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
-export function middleware(request: NextRequest) {
+export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
 
   // Allow these paths without checking setup status
@@ -23,9 +23,18 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // For all other paths, check setup status
-  // Note: We can't use async fetch in middleware easily, so we'll let the setup page handle the check
-  // The setup page will redirect if setup is complete
+  // For all other paths, check if setup is needed
+  // Check if Supabase is configured via environment variables
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+  
+  // If no Supabase URL in environment, redirect to setup
+  // The setup page will handle checking if database is actually configured
+  if (!supabaseUrl) {
+    return NextResponse.redirect(new URL('/setup', request.url))
+  }
+
+  // If we have Supabase URL, allow the request through
+  // The setup page will check if admin exists and redirect if setup is complete
   return NextResponse.next()
 }
 
