@@ -15,7 +15,7 @@ export default function Home() {
                     <path d="M42.4379 44C42.4379 44 36.0744 33.9038 41.1692 24C46.8624 12.9336 42.2078 4 42.2078 4L7.01134 4C7.01134 4 11.6577 12.932 5.96912 23.9969C0.876273 33.9029 7.27094 44 7.27094 44L42.4379 44Z"></path>
                   </svg>
                 </div>
-                <h2 className="text-text-light text-lg font-bold leading-tight tracking-[-0.015em]">NextGen Boilerplate</h2>
+                <h2 className="text-text-light text-lg font-bold leading-tight tracking-[-0.015em]">StoryShort.ai</h2>
               </Link>
               <div className="hidden md:flex flex-1 justify-end gap-8">
                 <div className="flex items-center gap-9">
@@ -40,10 +40,10 @@ export default function Home() {
                   <div className="flex min-h-[480px] flex-col gap-6 bg-cover bg-center bg-no-repeat @[480px]:gap-8 items-center justify-center p-4 text-center">
                     <div className="flex flex-col gap-4">
                       <h1 className="text-text-light text-4xl font-black leading-tight tracking-[-0.033em] @[480px]:text-6xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em]">
-                        Launch Your Next Project in Days, Not Months
+                        Create Viral Faceless Videos on Auto-Pilot
                       </h1>
                       <h2 className="text-text-light-secondary text-base font-normal leading-normal @[480px]:text-lg @[480px]:font-normal @[480px]:leading-normal max-w-2xl mx-auto">
-                        A production-ready Next.js boilerplate with payments, authentication, and everything else you need to go live and start generating revenue.
+                        Generate AI Videos in minutes. Our AI creation tool crafts viral AI videos for you.
                       </h2>
                     </div>
                     <div className="flex-wrap gap-4 flex justify-center">
@@ -66,47 +66,56 @@ export default function Home() {
               <div id="features" className="flex flex-col gap-10 px-4 py-10 @container">
                 <div className="flex flex-col gap-4 text-center">
                   <h2 className="text-text-light tracking-light text-[32px] font-bold leading-tight @[480px]:text-4xl @[480px]:font-black @[480px]:leading-tight @[480px]:tracking-[-0.033em] max-w-[720px] mx-auto">
-                    Packed with Powerful Features
+                    Everything You Need to Create Viral Videos
                   </h2>
                   <p className="text-text-light-secondary text-base font-normal leading-normal max-w-[720px] mx-auto">
-                    Our boilerplate is built with the best technologies to help you ship faster and focus on what matters most: your product.
+                    Say goodbye to boring videos. Get started with StoryShort.ai today and start creating engaging videos for TikTok and YouTube on autopilot.
                   </p>
                 </div>
                 <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 p-0">
                   <div className="flex flex-1 gap-4 rounded-xl border border-black/10 bg-white p-5 flex-col hover:bg-gray-50 transition-colors">
                     <div className="text-primary">
-                      <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>credit_card</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>smart_toy</span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <h3 className="text-text-light text-lg font-bold leading-tight">Stripe Payments</h3>
-                      <p className="text-text-light-secondary text-sm font-normal leading-normal">Pre-built integration with Stripe for subscriptions and one-time payments.</p>
+                      <h3 className="text-text-light text-lg font-bold leading-tight">AI-Driven Video Generation</h3>
+                      <p className="text-text-light-secondary text-sm font-normal leading-normal">Utilize advanced AI models to create unique faceless videos tailored to various niches.</p>
                     </div>
                   </div>
                   <div className="flex flex-1 gap-4 rounded-xl border border-black/10 bg-white p-5 flex-col hover:bg-gray-50 transition-colors">
                     <div className="text-primary">
-                      <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>palette</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>video_library</span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <h3 className="text-text-light text-lg font-bold leading-tight">Fully Customizable</h3>
-                      <p className="text-text-light-secondary text-sm font-normal leading-normal">Easily change the look and feel to match your brand with Tailwind CSS.</p>
+                      <h3 className="text-text-light text-lg font-bold leading-tight">Text to Video Conversion</h3>
+                      <p className="text-text-light-secondary text-sm font-normal leading-normal">Generate scripts with AI, choose a style, a voice, and a background to produce videos in seconds.</p>
                     </div>
                   </div>
                   <div className="flex flex-1 gap-4 rounded-xl border border-black/10 bg-white p-5 flex-col hover:bg-gray-50 transition-colors">
                     <div className="text-primary">
-                      <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>trending_up</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>image</span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <h3 className="text-text-light text-lg font-bold leading-tight">SEO Optimized</h3>
-                      <p className="text-text-light-secondary text-sm font-normal leading-normal">Built-in best practices for search engine optimization to get you discovered.</p>
+                      <h3 className="text-text-light text-lg font-bold leading-tight">Realistic Image Generation</h3>
+                      <p className="text-text-light-secondary text-sm font-normal leading-normal">Employ advanced AI models to create lifelike images, which can be incorporated into videos.</p>
                     </div>
                   </div>
                   <div className="flex flex-1 gap-4 rounded-xl border border-black/10 bg-white p-5 flex-col hover:bg-gray-50 transition-colors">
                     <div className="text-primary">
-                      <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>lock</span>
+                      <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>record_voice_over</span>
                     </div>
                     <div className="flex flex-col gap-1">
-                      <h3 className="text-text-light text-lg font-bold leading-tight">Developer-Ready Auth</h3>
-                      <p className="text-text-light-secondary text-sm font-normal leading-normal">Secure, ready-to-use authentication so your users can sign up and log in.</p>
+                      <h3 className="text-text-light text-lg font-bold leading-tight">Automatic Voiceover</h3>
+                      <p className="text-text-light-secondary text-sm font-normal leading-normal">Use ElevenLabs & OpenAI voices to generate videos with a real human voice.</p>
+                    </div>
+                  </div>
+                  <div className="flex flex-1 gap-4 rounded-xl border border-black/10 bg-white p-5 flex-col hover:bg-gray-50 transition-colors">
+                    <div className="text-primary">
+                      <span className="material-symbols-outlined" style={{ fontSize: '32px' }}>subtitles</span>
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <h3 className="text-text-light text-lg font-bold leading-tight">Customizable Captions</h3>
+                      <p className="text-text-light-secondary text-sm font-normal leading-normal">Your videos come with beautiful, customizable captions.</p>
                     </div>
                   </div>
                 </div>
@@ -114,35 +123,35 @@ export default function Home() {
 
               {/* Testimonials Section */}
               <div id="testimonials" className="flex flex-col gap-8 items-center px-4">
-                <h2 className="text-text-light text-3xl font-bold leading-tight tracking-[-0.015em] text-center">Trusted by Developers Worldwide</h2>
+                <h2 className="text-text-light text-3xl font-bold leading-tight tracking-[-0.015em] text-center">Trusted by 27,000+ Creators</h2>
                 <div className="w-full flex overflow-x-auto [-ms-scrollbar-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
                   <div className="flex items-stretch p-4 gap-8 w-full">
                     <div className="flex flex-1 flex-col gap-4 text-center rounded-lg min-w-72 pt-4 border border-black/10 bg-white p-6">
                       <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full flex flex-col self-center w-24 h-24" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAX7XsoItt7tL4K6V-ktD53xG5HFI2g3PjS3OvEkhH6Cn9UpNrLxijV4u8g8dcZ9L18oogHWh1Y6RzGPjpXIOrbZy2Nnm-OLVHt02SHyZTWAhsfXAbT8NnqgioXKxPPtZqXHBhA1makaxk2ksCXs_tSXCafhGRjKvlkIsAzIbZgoZwdiEzY9LgnjGiR7Gv4d1XsztmhYkpvHxGukafDBTTGDRDCj2FAxrBAv3IgFgYp6Hjxm1k-fnNmtqFvO9_q4V6QwahV7hTjk5St")' }}></div>
                       <div>
                         <p className="text-text-light-secondary text-sm font-normal leading-normal">
-                          "This boilerplate saved us at least two months of development time. We went from idea to launch in a weekend!"
+                          "StoryShort.ai has completely transformed how I create content. I can now produce viral videos in minutes instead of hours!"
                         </p>
                         <p className="text-text-light text-base font-medium leading-normal mt-4">Sarah Day</p>
-                        <p className="text-text-light/50 text-sm">Founder of StartupX</p>
+                        <p className="text-text-light/50 text-sm">Content Creator</p>
                       </div>
                     </div>
                     <div className="flex flex-1 flex-col gap-4 text-center rounded-lg min-w-72 pt-4 border border-black/10 bg-white p-6">
                       <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full flex flex-col self-center w-24 h-24" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuALR6jKxoIkBdd9q-TdaI2EMKlWzCcJRiPataH5ffjgmA7uvylZPSM1FPFkVNTvosqB_pKS7Tc3W8B-CUyQGC5wmtH_JmkYpAhSnNIggnZqLEZVmdj1ed5eECbeN1uUNorIVN8YiusnSk3Hj8ao9hfQStCYCsv2zkJMcmUpv2-dW7Kxb9NQyag-CcEwBIxqAo1gUZx3BCe-Ua1fa76ZXL7peRN4VtatgLQO7lHppy6Q6UOOJ9PW9yZrMeB4HHzupRPEMqHC0RKpzjtl")' }}></div>
                       <div>
                         <p className="text-text-light-secondary text-sm font-normal leading-normal">
-                          "The code is clean, well-documented, and a joy to work with. Highly recommended for any new SaaS project."
+                          "The AI video generation is incredible. My TikTok engagement has tripled since I started using StoryShort.ai!"
                         </p>
                         <p className="text-text-light text-base font-medium leading-normal mt-4">Mark Chen</p>
-                        <p className="text-text-light/50 text-sm">Lead Developer</p>
+                        <p className="text-text-light/50 text-sm">TikTok Creator</p>
                       </div>
                     </div>
                     <div className="flex flex-1 flex-col gap-4 text-center rounded-lg min-w-72 pt-4 border border-black/10 bg-white p-6">
                       <div className="bg-center bg-no-repeat aspect-square bg-cover rounded-full flex flex-col self-center w-24 h-24" style={{ backgroundImage: 'url("https://lh3.googleusercontent.com/aida-public/AB6AXuAi9YbgQSY2BNGGTKb5UNriLKzmlGIF9cmfdk9S_AN5Kx8u1tqLrfC34lX_xFKiIwZ9c1pBnSdsEWGMNuXfmvnIaYz3xtmJ15raIs_ggd2p6wWBzkW37TW_mOgtfEClRptWk_0VRF9sBo3pHFmEUnBybDel9oQ2XRKMTHS_RmSy1YDUvzUo4e4oX8wfQgnAayZEOQb7qM3ege1Uh32IXYtnUu-6o47suvnUpS_G8D3SA8ZwEv5pDi3H7Zy8APjr8SCPWrkCPnKhqWdX")' }}></div>
                       <div>
-                        <p className="text-text-light-secondary text-sm font-normal leading-normal">"As a solo developer, this was a game-changer. The Stripe integration alone was worth it."</p>
+                        <p className="text-text-light-secondary text-sm font-normal leading-normal">"Creating faceless videos has never been easier. The automatic voiceover feature is a game-changer for my YouTube channel."</p>
                         <p className="text-text-light text-base font-medium leading-normal mt-4">Emily Rodriguez</p>
-                        <p className="text-text-light/50 text-sm">Indie Hacker</p>
+                        <p className="text-text-light/50 text-sm">YouTube Creator</p>
                       </div>
                     </div>
                   </div>
@@ -198,7 +207,7 @@ export default function Home() {
 
             {/* Footer */}
             <footer className="text-text-light-secondary mt-24 border-t border-black/10 px-10 py-8 text-center">
-              <p>© 2024 NextGen Boilerplate. All rights reserved.</p>
+              <p>© 2024 StoryShort.ai. All rights reserved.</p>
             </footer>
           </div>
         </div>
