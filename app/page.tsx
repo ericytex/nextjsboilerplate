@@ -39,7 +39,7 @@ export default function Home() {
             <svg className="w-6 h-6 text-yellow-DEFAULT" fill="currentColor" viewBox="0 0 24 24">
               <path d="M13 2L3 14h8v8l10-12h-8V2z"/>
             </svg>
-            <h2 className="text-lg font-semibold">StoryShort.ai</h2>
+            <h2 className="text-lg font-semibold">aistoryshorts.com</h2>
           </Link>
           <div className="hidden md:flex items-center gap-6">
             <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="#features">Features</a>
@@ -309,7 +309,7 @@ export default function Home() {
           <section className="py-20 bg-gray-50 rounded-3xl mb-20">
             <div className="text-center mb-12">
               <h2 className="text-4xl lg:text-5xl font-black text-gray-900 mb-4">Loved by Creators Worldwide</h2>
-              <p className="text-lg text-gray-600">See what creators are saying about StoryShort.ai</p>
+              <p className="text-lg text-gray-600">See what creators are saying about aistoryshorts.com</p>
             </div>
             
             <div className="grid md:grid-cols-3 gap-8">
@@ -318,7 +318,7 @@ export default function Home() {
                   name: 'Sarah Chen',
                   role: 'TikTok Creator',
                   avatar: 1,
-                  quote: 'I went from 10K to 500K followers in 3 months using StoryShort.ai. The AI scripts are incredibly engaging!',
+                  quote: 'I went from 10K to 500K followers in 3 months using aistoryshorts.com. The AI scripts are incredibly engaging!',
                   stats: '500K followers'
                 },
                 {
@@ -440,7 +440,7 @@ export default function Home() {
                 <svg className="w-6 h-6 text-yellow-DEFAULT" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M13 2L3 14h8v8l10-12h-8V2z"/>
                 </svg>
-                <h3 className="font-bold text-gray-900">StoryShort.ai</h3>
+                <h3 className="font-bold text-gray-900">aistoryshorts.com</h3>
               </div>
               <p className="text-sm text-gray-600">Create viral faceless videos with AI. No recording needed.</p>
             </div>
@@ -471,7 +471,7 @@ export default function Home() {
           </div>
           <div className="border-t border-gray-200 pt-8 text-center">
             <p className="text-sm text-gray-600">
-              © 2024 StoryShort.ai. Create viral videos effortlessly with AI-powered automation.
+              © 2024 aistoryshorts.com. Create viral videos effortlessly with AI-powered automation.
             </p>
             <p className="text-xs mt-2 text-gray-500">
               Transform your content into engaging videos for TikTok, YouTube, and beyond.

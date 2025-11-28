@@ -59,7 +59,7 @@ export default function SignupPage() {
             <svg className="w-6 h-6 text-yellow-DEFAULT" fill="currentColor" viewBox="0 0 24 24">
               <path d="M13 2L3 14h8v8l10-12h-8V2z"/>
             </svg>
-            <h2 className="text-lg font-semibold">StoryShort</h2>
+            <h2 className="text-lg font-semibold">aistoryshorts.com</h2>
           </Link>
           <div className="hidden md:flex items-center gap-6">
             <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="/#features">Features</a>
@@ -80,7 +80,7 @@ export default function SignupPage() {
                 <svg className="w-6 h-6 text-yellow-DEFAULT" fill="currentColor" viewBox="0 0 24 24">
                   <path d="M13 2L3 14h8v8l10-12h-8V2z"/>
                 </svg>
-                <h2 className="text-lg font-semibold text-gray-900">StoryShort</h2>
+                <h2 className="text-lg font-semibold text-gray-900">aistoryshorts.com</h2>
               </div>
 
               <h1 className="text-4xl font-black text-gray-900 mb-8">Sign up for an account</h1>
@@ -228,7 +228,7 @@ export default function SignupPage() {
                 
                 <div className="text-center mt-4">
                   <h3 className="text-2xl font-black text-gray-900 mb-2">Join Thousands Of Content Creators</h3>
-                  <p className="text-gray-600">Who use StoryShort to create and share their stories.</p>
+                  <p className="text-gray-600">Who use aistoryshorts.com to create and share their stories.</p>
                 </div>
               </div>
             </div>

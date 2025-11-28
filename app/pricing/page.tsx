@@ -141,7 +141,7 @@ function PricingContent() {
             <svg className="w-6 h-6 text-yellow-DEFAULT" fill="currentColor" viewBox="0 0 24 24">
               <path d="M13 2L3 14h8v8l10-12h-8V2z"/>
             </svg>
-            <h2 className="text-lg font-semibold">StoryShort.ai</h2>
+            <h2 className="text-lg font-semibold">aistoryshorts.com</h2>
           </Link>
           <div className="hidden md:flex items-center gap-6">
             <a className="text-gray-700 hover:text-gray-900 text-sm font-medium no-underline transition-colors" href="/#features">Features</a>
@@ -348,7 +348,7 @@ function PricingContent() {
         <footer className="border-t border-gray-200 py-12 mt-20">
           <div className="text-center">
             <p className="text-sm text-gray-600">
-              © 2024 StoryShort.ai. Create viral videos effortlessly with AI-powered automation.
+              © 2024 aistoryshorts.com. Create viral videos effortlessly with AI-powered automation.
             </p>
             <p className="text-xs mt-2 text-gray-500">
               Transform your content into engaging videos for TikTok, YouTube, and beyond.
@@ -370,7 +370,7 @@ export default function PricingPage() {
               <svg className="w-6 h-6 text-yellow-DEFAULT" fill="currentColor" viewBox="0 0 24 24">
                 <path d="M13 2L3 14h8v8l10-12h-8V2z"/>
               </svg>
-              <h2 className="text-lg font-semibold">StoryShort.ai</h2>
+              <h2 className="text-lg font-semibold">aistoryshorts.com</h2>
             </div>
           </header>
           <main className="flex items-center justify-center h-screen">

@@ -9,7 +9,7 @@ const manrope = Manrope({
 })
 
 export const metadata: Metadata = {
-  title: 'StoryShort.ai - Create Viral Faceless Videos on Auto-Pilot',
+  title: 'aistoryshorts.com - Create Viral Faceless Videos on Auto-Pilot',
   description: 'Generate AI Videos in minutes. Our AI creation tool crafts viral AI videos for you. Create engaging videos for TikTok and YouTube on autopilot.',
 }
 
