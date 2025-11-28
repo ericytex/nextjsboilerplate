@@ -17,6 +17,9 @@ import {
   SearchIcon,
   SettingsIcon,
   UsersIcon,
+  VideoIcon,
+  PlayIcon,
+  FilmIcon,
 } from "lucide-react"
 
 import { NavDocuments } from "@/components/nav-documents"
@@ -35,20 +38,20 @@ import {
 
 const data = {
   user: {
-    name: "shadcn",
-    email: "m@example.com",
-    avatar: "/avatars/shadcn.jpg",
+    name: "Creator",
+    email: "user@aistoryshorts.com",
+    avatar: "/avatars/user.jpg",
   },
   navMain: [
     {
       title: "Dashboard",
-      url: "#",
+      url: "/dashboard",
       icon: LayoutDashboardIcon,
     },
     {
-      title: "Lifecycle",
+      title: "My Videos",
       url: "#",
-      icon: ListIcon,
+      icon: VideoIcon,
     },
     {
       title: "Analytics",
@@ -56,7 +59,7 @@ const data = {
       icon: BarChartIcon,
     },
     {
-      title: "Projects",
+      title: "Templates",
       url: "#",
       icon: FolderIcon,
     },
@@ -68,47 +71,51 @@ const data = {
   ],
   navClouds: [
     {
-      title: "Capture",
+      title: "Create Video",
       icon: CameraIcon,
       isActive: true,
       url: "#",
       items: [
         {
-          title: "Active Proposals",
+          title: "New Video",
           url: "#",
         },
         {
-          title: "Archived",
+          title: "From Template",
           url: "#",
         },
       ],
     },
     {
-      title: "Proposal",
+      title: "Published",
+      icon: PlayIcon,
+      url: "#",
+      items: [
+        {
+          title: "YouTube Shorts",
+          url: "#",
+        },
+        {
+          title: "TikTok",
+          url: "#",
+        },
+        {
+          title: "Instagram Reels",
+          url: "#",
+        },
+      ],
+    },
+    {
+      title: "Scripts",
       icon: FileTextIcon,
       url: "#",
       items: [
         {
-          title: "Active Proposals",
+          title: "My Scripts",
           url: "#",
         },
         {
-          title: "Archived",
-          url: "#",
-        },
-      ],
-    },
-    {
-      title: "Prompts",
-      icon: FileCodeIcon,
-      url: "#",
-      items: [
-        {
-          title: "Active Proposals",
-          url: "#",
-        },
-        {
-          title: "Archived",
+          title: "AI Generated",
           url: "#",
         },
       ],
@@ -133,19 +140,19 @@ const data = {
   ],
   documents: [
     {
-      name: "Data Library",
+      name: "Video Library",
       url: "#",
-      icon: DatabaseIcon,
+      icon: FilmIcon,
     },
     {
-      name: "Reports",
+      name: "Analytics",
       url: "#",
-      icon: ClipboardListIcon,
+      icon: BarChartIcon,
     },
     {
-      name: "Word Assistant",
+      name: "AI Assistant",
       url: "#",
-      icon: FileIcon,
+      icon: FileCodeIcon,
     },
   ],
 }
@@ -160,9 +167,9 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               asChild
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
-              <a href="#">
-                <ArrowUpCircleIcon className="h-5 w-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
+              <a href="/dashboard">
+                <ArrowUpCircleIcon className="h-5 w-5 text-yellow-DEFAULT" />
+                <span className="text-base font-semibold">aistoryshorts.com</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
