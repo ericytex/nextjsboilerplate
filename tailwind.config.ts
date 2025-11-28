@@ -30,6 +30,11 @@ const config: Config = {
   				DEFAULT: '#0d7ff2',
   				foreground: 'hsl(var(--primary-foreground))'
   			},
+  			yellow: {
+  				DEFAULT: '#FCD34D',
+  				light: '#FEF3C7',
+  				dark: '#F59E0B'
+  			},
   			secondary: {
   				DEFAULT: 'hsl(var(--secondary))',
   				foreground: 'hsl(var(--secondary-foreground))'
