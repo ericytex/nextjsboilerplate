@@ -12,10 +12,10 @@ function PricingContent() {
   const planParam = searchParams.get('plan')
 
   useEffect(() => {
-    // If trial=true and plan=basic, auto-trigger checkout
-    if (trial && planParam === 'basic') {
+    // If trial=true and plan=starter, auto-trigger checkout
+    if (trial && planParam === 'starter') {
       const timer = setTimeout(() => {
-        handleCheckout('basic', '/api/checkout/basic')
+        handleCheckout('starter', '/api/checkout/basic')
       }, 500) // Small delay for better UX
       return () => clearTimeout(timer)
     }
@@ -23,45 +23,76 @@ function PricingContent() {
 
   const plans = [
     {
-      id: 'basic',
-      name: 'Basic',
-      price: '$20',
-      buttonText: 'Start Free Trial',
+      id: 'starter',
+      name: 'Starter',
+      price: '$39',
+      videosPerMonth: 40,
+      credits: 400,
+      series: 1,
+      buttonText: 'Subscribe',
       checkoutUrl: '/api/checkout/basic',
       trialDays: 14,
-      highlight: trial && planParam === 'basic',
+      highlight: false,
     },
     {
-      id: 'pro',
-      name: 'Pro',
-      price: '$40',
-      buttonText: 'Choose Pro',
+      id: 'growth',
+      name: 'Growth',
+      price: '$69',
+      videosPerMonth: 120,
+      credits: 1200,
+      series: 2,
+      buttonText: 'Subscribe',
       checkoutUrl: '/api/checkout/pro',
+      trialDays: 14,
+      highlight: true, // Most popular
     },
     {
-      id: 'business',
-      name: 'Business',
-      price: '$100',
-      buttonText: 'Choose Business',
+      id: 'influencer',
+      name: 'Influencer',
+      price: '$129',
+      videosPerMonth: 240,
+      credits: 2400,
+      series: 3,
+      buttonText: 'Subscribe',
       checkoutUrl: '/api/checkout/business',
+      trialDays: 14,
+      highlight: false,
     },
     {
-      id: 'enterprise',
-      name: 'Enterprise',
-      price: 'Custom',
-      buttonText: 'Contact Us',
-      checkoutUrl: '/contact',
+      id: 'ultra',
+      name: 'Ultra',
+      price: '$199',
+      videosPerMonth: 500,
+      credits: 5000,
+      series: 4,
+      buttonText: 'Subscribe',
+      checkoutUrl: '/api/checkout/business',
+      trialDays: 14,
+      highlight: false,
     },
   ]
 
+  const features = [
+    'Voiceovers',
+    'AI generated content',
+    'Background music',
+    'No watermark',
+    'Auto-publish on TikTok and Youtube'
+  ]
+
   const handleCheckout = async (planId: string, checkoutUrl: string) => {
-    if (planId === 'enterprise') {
-      router.push(checkoutUrl)
-      return
+    // Map plan IDs to checkout endpoints
+    const planMapping: Record<string, string> = {
+      'starter': '/api/checkout/basic',
+      'growth': '/api/checkout/pro',
+      'influencer': '/api/checkout/business',
+      'ultra': '/api/checkout/business'
     }
+    
+    const actualCheckoutUrl = planMapping[planId] || checkoutUrl
 
     try {
-      const response = await fetch(checkoutUrl)
+      const response = await fetch(actualCheckoutUrl)
       const data = await response.json()
       
       // Check for errors from API
@@ -126,7 +157,7 @@ function PricingContent() {
         <main className="py-12 lg:py-20">
           <div className="text-center mb-12">
             <h1 className="text-4xl lg:text-5xl font-black text-gray-900 mb-4">Pricing Plans</h1>
-            {trial && planParam === 'basic' && (
+            {trial && planParam === 'starter' && (
               <div className="inline-flex items-center gap-2 bg-green-100 text-green-800 px-4 py-2 rounded-lg mb-4">
                 <span className="material-symbols-outlined">check_circle</span>
                 <span className="font-semibold">14-Day Free Trial - No charge for 14 days</span>
@@ -141,50 +172,75 @@ function PricingContent() {
             {plans.map((plan) => (
               <div
                 key={plan.id}
-                className={`bg-white rounded-xl shadow-lg p-6 border-2 flex flex-col transition-all hover:shadow-xl ${
+                className={`rounded-xl shadow-lg p-6 border-2 flex flex-col transition-all hover:shadow-xl ${
                   plan.highlight 
-                    ? 'border-yellow-DEFAULT bg-yellow-light scale-105' 
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-gray-800 bg-gray-900 text-white' 
+                    : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}
               >
-                {plan.highlight && (
-                  <div className="bg-yellow-DEFAULT text-gray-900 text-xs font-bold px-3 py-1 rounded-full uppercase text-center mb-4">
-                    Recommended
-                  </div>
-                )}
-                <h2 className="text-2xl font-black text-gray-900 mb-2">{plan.name}</h2>
-                <div className="mb-4">
-                  <div className="text-4xl font-black text-gray-900">
+                <h2 className={`text-2xl font-black mb-2 ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>
+                  {plan.name}
+                </h2>
+                
+                <div className="mb-6">
+                  <div className={`text-4xl font-black mb-4 ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>
                     {plan.price}
                   </div>
-                  {plan.trialDays && (
-                    <div className="text-sm text-green-600 font-bold mt-2 flex items-center gap-1">
-                      <span className="material-symbols-outlined text-sm">check_circle</span>
-                      {plan.trialDays}-day free trial
+                  
+                  {/* Plan Details */}
+                  <div className="space-y-3 mb-6">
+                    <div className="flex items-center justify-between">
+                      <span className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>Videos per month</span>
+                      <span className={`font-bold ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>{plan.videosPerMonth}</span>
                     </div>
-                  )}
+                    <div className="flex items-center justify-between">
+                      <span className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>Credits</span>
+                      <span className={`font-bold ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>{plan.credits.toLocaleString()}</span>
+                    </div>
+                    <div className="flex items-center justify-between">
+                      <span className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>Series</span>
+                      <span className={`font-bold ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>{plan.series}</span>
+                    </div>
+                  </div>
                 </div>
+
+                {/* Features List */}
+                <div className="flex-1 mb-6">
+                  <div className="space-y-3">
+                    {features.map((feature, index) => (
+                      <div key={index} className="flex items-center gap-2">
+                        <span className={`material-symbols-outlined text-lg ${
+                          plan.highlight ? 'text-gray-400' : 'text-gray-500'
+                        }`}>
+                          check_circle
+                        </span>
+                        <span className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-700'}`}>
+                          {feature}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Trial Info */}
                 {plan.trialDays && (
-                  <p className="text-sm text-gray-600 mb-6 leading-relaxed">
-                    Add your card details now, but you won't be charged for {plan.trialDays} days
-                  </p>
-                )}
-                {!plan.trialDays && plan.id !== 'enterprise' && (
-                  <div className="mb-6 flex-1"></div>
-                )}
-                {plan.id === 'enterprise' && (
-                  <div className="mb-6 flex-1">
-                    <p className="text-sm text-gray-600">Custom pricing for large teams</p>
+                  <div className={`mb-4 p-3 rounded-lg ${
+                    plan.highlight ? 'bg-gray-800' : 'bg-green-50'
+                  }`}>
+                    <p className={`text-xs font-semibold ${
+                      plan.highlight ? 'text-green-400' : 'text-green-700'
+                    }`}>
+                      {plan.trialDays}-day free trial
+                    </p>
                   </div>
                 )}
+
                 <Button
                   onClick={() => handleCheckout(plan.id, plan.checkoutUrl)}
                   className={`w-full h-12 font-bold transition-all hover:scale-105 no-underline ${
                     plan.highlight
-                      ? 'bg-yellow-DEFAULT text-gray-900 hover:bg-yellow-dark'
-                      : plan.id === 'enterprise'
-                      ? 'bg-gray-900 text-white hover:bg-gray-800'
-                      : 'bg-primary text-white hover:bg-primary/90'
+                      ? 'bg-white text-gray-900 hover:bg-gray-100'
+                      : 'bg-gray-900 text-white hover:bg-gray-800'
                   }`}
                 >
                   {plan.buttonText}
