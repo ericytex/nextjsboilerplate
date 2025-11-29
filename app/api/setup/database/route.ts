@@ -60,42 +60,59 @@ export async function POST(request: Request) {
                                   configCheckError.message?.includes('relation') ||
                                   configCheckError.message?.includes('does not exist')
       
-      // If tables are missing and we have database URL + service role key, create them automatically
-      if (isTableMissingError && serviceRoleKey && databaseUrl) {
-        console.log('🔧 Tables missing - attempting automatic creation immediately...')
-        try {
-          const createResult = await createTablesAutomatically(projectUrl, serviceRoleKey, projectId, sql, databaseUrl)
-          
-          if (createResult.success) {
-            console.log('✅ Tables created! Waiting for schema cache refresh...')
-            // Wait for PostgREST to refresh schema cache
-            await new Promise(resolve => setTimeout(resolve, 3000))
-            
-            // Verify tables were created by checking again
-            const verifySupabase = createSupabaseClient(projectUrl, serviceRoleKey)
-            const { error: verifyError } = await verifySupabase
-              .from('integration_configs')
-              .select('id')
-              .limit(1)
-            
-            if (!verifyError) {
-              console.log('✅ Tables verified after automatic creation!')
-              // Tables exist now, continue with normal flow
-              tablesExist = true
-              tableCheckError = null
-            } else {
-              console.log('⚠️ Tables created but verification still failing:', verifyError.message)
-              // Continue to show error but indicate tables may exist
-              tableCheckError = verifyError
+      // IMPORTANT: PGRST205 can mean tables don't exist OR RLS is blocking access
+      // If we have service role key, verify if tables actually exist by checking with service role key
+      if (isTableMissingError && serviceRoleKey) {
+        console.log('🔍 PGRST205 detected - verifying if tables exist using Service Role Key...')
+        const serviceRoleSupabase = createSupabaseClient(projectUrl, serviceRoleKey)
+        const { error: serviceRoleCheckError } = await serviceRoleSupabase
+          .from('integration_configs')
+          .select('id')
+          .limit(1)
+        
+        if (!serviceRoleCheckError) {
+          // Tables exist! It's an RLS issue, not missing tables
+          console.log('✅ Tables exist but RLS is blocking access with Anon key')
+          permissionIssue = true
+          tablesExist = true // Tables exist, just blocked
+        } else {
+          // Tables truly don't exist - try to create them if we have database URL
+          if (databaseUrl) {
+            console.log('🔧 Tables truly missing - attempting automatic creation...')
+            try {
+              const createResult = await createTablesAutomatically(projectUrl, serviceRoleKey, projectId, sql, databaseUrl)
+              
+              if (createResult.success) {
+                console.log('✅ Tables created! Waiting for schema cache refresh...')
+                await new Promise(resolve => setTimeout(resolve, 3000))
+                
+                // Verify tables were created
+                const verifySupabase = createSupabaseClient(projectUrl, serviceRoleKey)
+                const { error: verifyError } = await verifySupabase
+                  .from('integration_configs')
+                  .select('id')
+                  .limit(1)
+                
+                if (!verifyError) {
+                  console.log('✅ Tables verified after automatic creation!')
+                  tablesExist = true
+                  tableCheckError = null
+                } else {
+                  console.log('⚠️ Tables created but verification still failing:', verifyError.message)
+                  tableCheckError = verifyError
+                }
+              } else {
+                console.log('❌ Automatic table creation failed:', createResult.error)
+              }
+            } catch (autoCreateError: any) {
+              console.error('❌ Error during automatic table creation:', autoCreateError)
             }
-          } else {
-            console.log('❌ Automatic table creation failed:', createResult.error)
-            // Continue to show error with SQL
           }
-        } catch (autoCreateError: any) {
-          console.error('❌ Error during automatic table creation:', autoCreateError)
-          // Continue to show error with SQL
         }
+      } else if (isTableMissingError && !serviceRoleKey) {
+        // No service role key - can't verify if tables exist or if it's RLS
+        // Assume tables don't exist for now, but user should add service role key
+        console.log('⚠️ PGRST205 detected but no Service Role Key to verify if tables exist')
       }
       
       // Check if it's a permission issue
@@ -209,12 +226,18 @@ WITH CHECK (true);`,
           needsServiceRoleKey: true,
           suggestion: 'Add your Service Role Key in the "Service Role Key (Optional)" field above, then click "Continue" again. Service Role Key bypasses RLS.',
           diagnostic: {
-            tablesExist: true,
+            tablesExist: tablesExist, // Use the actual value we determined
             accessible: false,
             reason: 'RLS policies blocking access',
             solution: 'Use Service Role Key'
           }
         }, { status: 403 })
+      }
+      
+      // If we determined tables exist but are blocked, and we have service role key, continue
+      if (permissionIssue && serviceRoleKey && tablesExist) {
+        console.log('✅ Tables exist and Service Role Key available - can proceed')
+        // Continue with normal flow - we'll use service role key for operations
       }
       
       // Check if tables actually don't exist
@@ -558,41 +581,88 @@ async function createTablesAutomatically(
       console.log('✅ Connected to PostgreSQL database')
 
       // Execute the SQL schema
-      // Remove comments and split by semicolons
+      // Remove comments but keep structure
       const cleanSql = sql
         .split('\n')
-        .filter(line => !line.trim().startsWith('--') || line.trim().startsWith('-- Complete'))
+        .filter(line => {
+          const trimmed = line.trim()
+          // Keep lines that aren't comments (except keep the header comment)
+          return !trimmed.startsWith('--') || trimmed.startsWith('-- Complete') || trimmed.startsWith('-- Run this')
+        })
         .join('\n')
       
+      // Split by semicolons, but be careful with multi-line statements
       const statements = cleanSql
         .split(';')
         .map(s => s.trim())
         .filter(s => s.length > 0 && !s.startsWith('--'))
 
-      console.log(`📝 Executing ${statements.length} SQL statements...`)
+      console.log(`📝 Executing ${statements.length} SQL statements (including RLS and policies)...`)
+      
+      let successCount = 0
+      let skippedCount = 0
+      let errorCount = 0
       
       for (let i = 0; i < statements.length; i++) {
         const statement = statements[i]
         if (statement.trim()) {
           try {
-            await client.query(statement)
-            console.log(`✅ Executed statement ${i + 1}/${statements.length}`)
+            await client.query(statement + ';') // Add semicolon back
+            successCount++
+            console.log(`✅ [${i + 1}/${statements.length}] Executed: ${statement.substring(0, 60)}...`)
           } catch (queryError: any) {
             // Ignore errors for IF NOT EXISTS statements (tables might already exist)
             const isIgnorableError = 
               queryError.message?.includes('already exists') || 
               queryError.message?.includes('duplicate') ||
-              queryError.message?.includes('does not exist') && statement.includes('DROP')
+              (queryError.message?.includes('does not exist') && statement.includes('DROP')) ||
+              queryError.message?.includes('relation') && statement.includes('IF EXISTS')
             
-            if (!isIgnorableError) {
-              console.warn(`⚠️ SQL statement ${i + 1} warning:`, queryError.message)
-              // Log but continue - some statements might fail if objects already exist
+            if (isIgnorableError) {
+              skippedCount++
+              console.log(`⏭️  [${i + 1}/${statements.length}] Skipped (already exists): ${statement.substring(0, 60)}...`)
+            } else {
+              errorCount++
+              console.warn(`⚠️  [${i + 1}/${statements.length}] Error: ${queryError.message}`)
+              console.warn(`   Statement: ${statement.substring(0, 100)}...`)
+              // Continue - some statements might fail but we want to execute as many as possible
             }
           }
         }
       }
       
-      console.log('✅ All SQL statements executed')
+      console.log(`✅ SQL execution complete: ${successCount} succeeded, ${skippedCount} skipped, ${errorCount} errors`)
+      
+      // Verify that RLS is enabled and policies exist
+      console.log('🔍 Verifying RLS and policies...')
+      try {
+        // Check if RLS is enabled on key tables
+        const rlsCheck = await client.query(`
+          SELECT tablename, rowsecurity 
+          FROM pg_tables 
+          WHERE schemaname = 'public' 
+          AND tablename IN ('users', 'integration_configs')
+        `)
+        
+        console.log('📊 RLS Status:', rlsCheck.rows)
+        
+        // Check if policies exist
+        const policyCheck = await client.query(`
+          SELECT schemaname, tablename, policyname 
+          FROM pg_policies 
+          WHERE schemaname = 'public' 
+          AND tablename IN ('users', 'integration_configs')
+        `)
+        
+        console.log('📊 Policies found:', policyCheck.rows.length)
+        if (policyCheck.rows.length > 0) {
+          policyCheck.rows.forEach((row: any) => {
+            console.log(`   - ${row.tablename}.${row.policyname}`)
+          })
+        }
+      } catch (verifyError: any) {
+        console.warn('⚠️ Could not verify RLS status:', verifyError.message)
+      }
 
       // Refresh PostgREST schema cache
       try {
