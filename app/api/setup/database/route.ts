@@ -537,13 +537,29 @@ WITH CHECK (true);`,
     })
   } catch (error: any) {
     console.error('Error saving database config:', error)
-    return NextResponse.json(
-      { 
-        error: 'Failed to save database configuration',
-        details: error.message
-      },
-      { status: 500 }
-    )
+    // Ensure we always return JSON, never HTML
+    try {
+      return NextResponse.json(
+        { 
+          error: 'Failed to save database configuration',
+          details: error?.message || 'Unknown error',
+          code: error?.code || 'UNKNOWN_ERROR'
+        },
+        { status: 500 }
+      )
+    } catch (jsonError) {
+      // Fallback if JSON serialization fails
+      return new Response(
+        JSON.stringify({ 
+          error: 'Failed to save database configuration',
+          details: String(error)
+        }),
+        { 
+          status: 500,
+          headers: { 'Content-Type': 'application/json' }
+        }
+      )
+    }
   }
 }
 
@@ -687,9 +703,10 @@ async function createTablesAutomatically(
       }
     }
   } catch (error: any) {
+    console.error('Error in createTablesAutomatically:', error)
     return {
       success: false,
-      error: `Failed to create tables: ${error.message}`
+      error: `Failed to create tables: ${error?.message || String(error)}`
     }
   }
 }
