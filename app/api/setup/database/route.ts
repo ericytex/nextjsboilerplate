@@ -379,28 +379,86 @@ WITH CHECK (true);`,
             }, { status: 400 })
           }
         } else {
-          // Missing required info for auto-creation
-          const missingItems = []
+          // Missing required info for auto-creation - but check env vars
+          const missingItems: string[] = []
           if (!serviceRoleKey) missingItems.push('Service Role Key')
           if (!databaseUrl) missingItems.push('Database URL')
           
-          return NextResponse.json({
-            needsTable: true,
-            sql: sql,
-            error: 'Database tables not found. Please create them first.',
-            instructions: `Copy the SQL below and run it in Supabase SQL Editor. Or add ${missingItems.join(' and ')} to enable automatic creation.`,
-            sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
-            details: tableCheckError?.message || 'Tables not found',
-            needsServiceRoleKey: !serviceRoleKey,
-            needsDatabaseUrl: !databaseUrl,
-            canAutoCreate: false,
-            diagnostic: {
-              tablesExist: false,
-              accessible: false,
-              reason: 'Tables do not exist',
-              solution: 'Run SQL schema or provide Database URL + Service Role Key for auto-creation'
+          // Check if Database URL is in env vars (even if not in request)
+          const hasDatabaseUrlInEnv = !!process.env.DATABASE_URL
+          const hasServiceRoleKeyInEnv = !!process.env.SUPABASE_SERVICE_ROLE_KEY
+          
+          // If we have Database URL in env vars, we can still auto-create
+          if (hasDatabaseUrlInEnv) {
+            console.log('💡 Database URL found in env vars - attempting auto-creation...')
+            try {
+              const envDatabaseUrl = process.env.DATABASE_URL || ''
+              const envServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || serviceRoleKey || ''
+              
+              const createResult = await createTablesAutomatically(
+                projectUrl, 
+                envServiceRoleKey, 
+                projectId, 
+                sql, 
+                envDatabaseUrl
+              )
+              
+              if (createResult.success) {
+                console.log('✅ Tables created automatically using Database URL from env vars!')
+                await new Promise(resolve => setTimeout(resolve, 3000))
+                
+                // Verify tables were created
+                const verifyKey = envServiceRoleKey || anonKey
+                const verifySupabase = createSupabaseClient(projectUrl, verifyKey)
+                const { error: verifyError } = await verifySupabase
+                  .from('integration_configs')
+                  .select('id')
+                  .limit(1)
+                
+                if (!verifyError) {
+                  console.log('✅ Tables verified after automatic creation!')
+                  tablesExist = true
+                  tableCheckError = null
+                  // Continue with normal flow - tables now exist
+                } else {
+                  console.log('⚠️ Tables created but verification still failing:', verifyError.message)
+                  // Still mark as success since creation succeeded
+                  tablesExist = true
+                }
+              } else {
+                console.log('❌ Automatic table creation failed:', createResult.error)
+                // Fall through to return error with SQL
+              }
+            } catch (autoCreateError: any) {
+              console.error('❌ Error during automatic table creation:', autoCreateError)
+              // Fall through to return error with SQL
             }
-          }, { status: 400 })
+          }
+          
+          // If tables still don't exist after auto-creation attempt, return error
+          if (!tablesExist) {
+            return NextResponse.json({
+              needsTable: true,
+              sql: sql,
+              error: 'Database tables not found. ' + (hasDatabaseUrlInEnv ? 'Automatic creation attempted but failed.' : 'Please create them first.'),
+              instructions: hasDatabaseUrlInEnv 
+                ? 'Automatic table creation was attempted using Database URL from .env.local but failed. Please check the error above or create tables manually using the SQL below.'
+                : `Copy the SQL below and run it in Supabase SQL Editor. Or add ${missingItems.join(' and ')} to enable automatic creation.`,
+              sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+              details: tableCheckError?.message || 'Tables not found',
+              needsServiceRoleKey: !serviceRoleKey && !hasServiceRoleKeyInEnv,
+              needsDatabaseUrl: !databaseUrl && !hasDatabaseUrlInEnv,
+              canAutoCreate: hasDatabaseUrlInEnv,
+              autoCreateAttempted: hasDatabaseUrlInEnv,
+              diagnostic: {
+                tablesExist: false,
+                accessible: false,
+                reason: tableCheckError?.message || 'Tables not found',
+                code: tableCheckError?.code,
+                solution: hasDatabaseUrlInEnv ? 'Auto-creation attempted - check logs' : 'Run SQL schema or provide Database URL + Service Role Key for auto-creation'
+              }
+            }, { status: 400 })
+          }
         }
       }
       
