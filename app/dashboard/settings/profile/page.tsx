@@ -1,17 +1,33 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { Save, Upload, User, Mail, Phone, MapPin, Calendar } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Save, Upload, User, Mail, Phone, MapPin, Calendar, Crown } from "lucide-react"
 import { toast } from "sonner"
+
+interface Subscription {
+  id: string
+  plan: string
+  planDisplayName: string
+  status: string
+  billingCycle: string
+  currentPeriodStart: string | null
+  currentPeriodEnd: string | null
+  cancelAtPeriodEnd: boolean
+  isTrial: boolean
+  createdAt: string
+}
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(false)
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [subscriptionLoading, setSubscriptionLoading] = useState(true)
   const [formData, setFormData] = useState({
     fullName: 'John Doe',
     email: 'john@example.com',
@@ -22,6 +38,32 @@ export default function ProfilePage() {
     website: 'https://aistoryshorts.com',
     avatar: '/avatars/user.jpg'
   })
+
+  // Fetch user subscription
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const userId = localStorage.getItem('user_id')
+        if (!userId) {
+          setSubscriptionLoading(false)
+          return
+        }
+
+        const response = await fetch(`/api/user/subscription?userId=${userId}`)
+        const data = await response.json()
+
+        if (data.success && data.subscription) {
+          setSubscription(data.subscription)
+        }
+      } catch (error) {
+        console.error('Failed to fetch subscription:', error)
+      } finally {
+        setSubscriptionLoading(false)
+      }
+    }
+
+    fetchSubscription()
+  }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -101,6 +143,76 @@ export default function ProfilePage() {
                     </p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+
+            {/* Subscription Plan */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Crown className="h-5 w-5" />
+                  Subscription Plan
+                </CardTitle>
+                <CardDescription>
+                  Your current subscription and billing information
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {subscriptionLoading ? (
+                  <div className="text-sm text-muted-foreground">Loading subscription...</div>
+                ) : subscription ? (
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="font-semibold text-lg">{subscription.planDisplayName} Plan</p>
+                        <p className="text-sm text-muted-foreground capitalize">
+                          {subscription.billingCycle === 'monthly' ? 'Monthly' : 'Yearly'} billing
+                        </p>
+                      </div>
+                      <Badge 
+                        variant={
+                          subscription.status === 'active' 
+                            ? 'default' 
+                            : subscription.status === 'trialing'
+                            ? 'secondary'
+                            : 'outline'
+                        }
+                      >
+                        {subscription.isTrial ? 'Trial' : subscription.status}
+                      </Badge>
+                    </div>
+
+                    {subscription.currentPeriodEnd && (
+                      <>
+                        <Separator />
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Calendar className="h-4 w-4" />
+                          <span>
+                            {subscription.isTrial ? 'Trial ends' : 'Next billing'}:{' '}
+                            {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', {
+                              month: 'long',
+                              day: 'numeric',
+                              year: 'numeric'
+                            })}
+                          </span>
+                        </div>
+                      </>
+                    )}
+
+                    {subscription.cancelAtPeriodEnd && (
+                      <div className="p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded text-xs text-amber-800 dark:text-amber-200">
+                        Subscription will be cancelled at the end of the billing period
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <p className="text-sm text-muted-foreground">No active subscription</p>
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="/pricing">View Plans</a>
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             </Card>
 
