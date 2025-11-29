@@ -1,7 +1,9 @@
 import { NextResponse } from 'next/server'
 import { headers } from 'next/headers'
+import { logActivity, extractRequestInfo } from '@/lib/activity-logger'
+import { NextRequest } from 'next/server'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   const headersList = headers()
   const host = headersList.get('host') || 'localhost:3000'
   
@@ -25,6 +27,30 @@ export async function GET() {
       },
       { status: 500 }
     )
+  }
+
+  // Log checkout initiation
+  try {
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+    if (supabaseUrl && serviceRoleKey) {
+      const requestInfo = extractRequestInfo(request)
+      await logActivity(supabaseUrl, serviceRoleKey, {
+        action: 'checkout.initiated',
+        resource_type: 'subscription',
+        resource_id: 'basic',
+        ip_address: requestInfo.ip_address,
+        user_agent: requestInfo.user_agent,
+        metadata: {
+          plan: 'basic',
+          trial_enabled: true,
+          trial_days: 14
+        }
+      })
+    }
+  } catch (logError) {
+    // Don't fail the request if logging fails
+    console.warn('⚠️ Failed to log checkout activity (non-critical):', logError)
   }
 
   // Add trial information to the response

@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseClient } from '@/lib/supabase-client'
+import { logActivity, extractRequestInfo } from '@/lib/activity-logger'
 import bcrypt from 'bcryptjs'
 
 /**
@@ -86,7 +87,28 @@ export async function POST(request: Request) {
     // to prevent email enumeration attacks
     const genericError = 'Invalid email or password'
 
+    const requestInfo = extractRequestInfo(request)
+
     if (!user) {
+      // Log failed login attempt (user not found)
+      // Note: We don't log the email to prevent enumeration, but we log the attempt
+      try {
+        await logActivity(supabaseUrl, serviceRoleKey, {
+          action: 'user.signin.failed',
+          resource_type: 'user',
+          resource_id: null,
+          user_id: null,
+          ip_address: requestInfo.ip_address,
+          user_agent: requestInfo.user_agent,
+          metadata: {
+            reason: 'user_not_found'
+          }
+        })
+      } catch (logError) {
+        // Don't fail the request if logging fails
+        console.warn('⚠️ Failed to log failed signin activity (non-critical):', logError)
+      }
+
       return NextResponse.json(
         { error: genericError },
         { status: 401 }
@@ -104,10 +126,49 @@ export async function POST(request: Request) {
     const passwordValid = await bcrypt.compare(password, user.password_hash)
 
     if (!passwordValid) {
+      // Log failed login attempt
+      try {
+        await logActivity(supabaseUrl, serviceRoleKey, {
+          action: 'user.signin.failed',
+          resource_type: 'user',
+          resource_id: user.id,
+          user_id: user.id,
+          ip_address: requestInfo.ip_address,
+          user_agent: requestInfo.user_agent,
+          metadata: {
+            email: email.toLowerCase(),
+            reason: 'invalid_password'
+          }
+        })
+      } catch (logError) {
+        // Don't fail the request if logging fails
+        console.warn('⚠️ Failed to log failed signin activity (non-critical):', logError)
+      }
+
       return NextResponse.json(
         { error: genericError },
         { status: 401 }
       )
+    }
+
+    // Log successful login
+    try {
+      await logActivity(supabaseUrl, serviceRoleKey, {
+        action: 'user.signin.success',
+        resource_type: 'user',
+        resource_id: user.id,
+        user_id: user.id,
+        ip_address: requestInfo.ip_address,
+        user_agent: requestInfo.user_agent,
+        metadata: {
+          email: user.email,
+          role: user.role,
+          email_verified: user.email_verified
+        }
+      })
+    } catch (logError) {
+      // Don't fail the request if logging fails
+      console.warn('⚠️ Failed to log signin activity (non-critical):', logError)
     }
 
     // Create session token (in production, use proper session management)

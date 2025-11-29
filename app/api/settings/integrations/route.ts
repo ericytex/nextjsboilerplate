@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createServerClient, isSupabaseConfigured } from '@/lib/supabase'
 import { createSupabaseClient } from '@/lib/supabase-client'
+import { logActivity, extractRequestInfo } from '@/lib/activity-logger'
 
 // Fallback in-memory store if Supabase is not configured
 // This is only used temporarily until Supabase is set up
@@ -83,6 +84,28 @@ export async function POST(request: Request) {
 
         if (!supabaseError && supabaseData) {
           // Successfully saved to Supabase! Now all future configs will use Supabase
+          // Log the activity
+          try {
+            const requestInfo = extractRequestInfo(request)
+            await logActivity(
+              config.customSettings.projectUrl,
+              config.customSettings.serviceRoleKey || config.customSettings.anonKey,
+              {
+                action: 'integration.supabase.saved',
+                resource_type: 'integration',
+                resource_id: 'supabase',
+                ip_address: requestInfo.ip_address,
+                user_agent: requestInfo.user_agent,
+                metadata: {
+                  enabled: config.enabled
+                }
+              }
+            )
+          } catch (logError) {
+            // Don't fail the request if logging fails
+            console.warn('⚠️ Failed to log activity (non-critical):', logError)
+          }
+
           return NextResponse.json({
             success: true,
             message: '✅ Supabase configured and saved to database! All future configurations will be persisted.',
@@ -139,6 +162,30 @@ export async function POST(request: Request) {
           .single()
 
         if (!supabaseError && supabaseData) {
+          // Log the activity if Supabase is configured
+          try {
+            const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
+            const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+            if (supabaseUrl && serviceRoleKey) {
+              const requestInfo = extractRequestInfo(request)
+              await logActivity(supabaseUrl, serviceRoleKey, {
+                action: `integration.${integrationId}.saved`,
+                resource_type: 'integration',
+                resource_id: integrationId,
+                ip_address: requestInfo.ip_address,
+                user_agent: requestInfo.user_agent,
+                metadata: {
+                  enabled: config.enabled,
+                  has_api_key: !!config.apiKey,
+                  has_secret_key: !!config.secretKey
+                }
+              })
+            }
+          } catch (logError) {
+            // Don't fail the request if logging fails
+            console.warn('⚠️ Failed to log activity (non-critical):', logError)
+          }
+
           return NextResponse.json({
             success: true,
             message: 'Integration configuration saved to Supabase database',

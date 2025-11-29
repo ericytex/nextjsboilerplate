@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseClient } from '@/lib/supabase-client'
+import { logActivity, extractRequestInfo } from '@/lib/activity-logger'
 import bcrypt from 'bcryptjs'
 
 /**
@@ -131,6 +132,27 @@ export async function POST(request: Request) {
         user_id: newUser.id,
         settings: {}
       })
+
+    // Log the signup activity
+    try {
+      const requestInfo = extractRequestInfo(request)
+      await logActivity(supabaseUrl, serviceRoleKey, {
+        action: 'user.signup',
+        resource_type: 'user',
+        resource_id: newUser.id,
+        user_id: newUser.id,
+        ip_address: requestInfo.ip_address,
+        user_agent: requestInfo.user_agent,
+        metadata: {
+          email: newUser.email,
+          full_name: newUser.full_name,
+          role: newUser.role
+        }
+      })
+    } catch (logError) {
+      // Don't fail the request if logging fails
+      console.warn('⚠️ Failed to log signup activity (non-critical):', logError)
+    }
 
     return NextResponse.json({
       success: true,

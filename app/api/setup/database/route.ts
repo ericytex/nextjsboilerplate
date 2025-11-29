@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseClient } from '@/lib/supabase-client'
+import { logActivity, extractRequestInfo } from '@/lib/activity-logger'
 import { Client } from 'pg'
 
 /**
@@ -653,6 +654,27 @@ WITH CHECK (true);`,
     // Successfully saved! Tables are verified and config is saved
     // No need to check users table again since we already verified it above
 
+    // Log the activity to Supabase
+    try {
+      const requestInfo = extractRequestInfo(request)
+      await logActivity(projectUrl, serviceRoleKey || anonKey, {
+        action: 'supabase.setup.completed',
+        resource_type: 'integration',
+        resource_id: 'supabase',
+        ip_address: requestInfo.ip_address,
+        user_agent: requestInfo.user_agent,
+        metadata: {
+          project_id: projectId,
+          has_service_role_key: !!serviceRoleKey,
+          has_database_url: !!databaseUrl
+        }
+      })
+      console.log('✅ Activity logged: Supabase setup completed')
+    } catch (logError) {
+      // Don't fail the request if logging fails
+      console.warn('⚠️ Failed to log activity (non-critical):', logError)
+    }
+
     // Note: Environment variables cannot be set at runtime in Next.js
     // They are read-only. Configuration is saved to integration_configs table instead.
     // Environment variables should be set in .env.local or deployment platform
@@ -1015,6 +1037,25 @@ WITH CHECK (true);
     ON users FOR ALL 
     USING (true) 
     WITH CHECK (true);
+
+-- Activity logs: Allow service role to insert logs (for activity logging)
+DROP POLICY IF EXISTS "Service role can insert activity logs" ON activity_logs;
+CREATE POLICY "Service role can insert activity logs" 
+ON activity_logs FOR INSERT 
+USING (true) 
+WITH CHECK (true);
+
+-- Activity logs: Users can read their own activity logs
+DROP POLICY IF EXISTS "Users can read own activity logs" ON activity_logs;
+CREATE POLICY "Users can read own activity logs" 
+ON activity_logs FOR SELECT 
+USING (auth.uid() = user_id);
+
+-- Activity logs: Service role can read all activity logs (for admin)
+DROP POLICY IF EXISTS "Service role can read all activity logs" ON activity_logs;
+CREATE POLICY "Service role can read all activity logs" 
+ON activity_logs FOR SELECT 
+USING (true);
 
 -- For service role operations (bypass RLS)
 -- Note: Service role key bypasses RLS, so these policies are for anon key
