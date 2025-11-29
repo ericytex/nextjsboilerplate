@@ -47,6 +47,11 @@ export default function SetupPage() {
   const checkSetupStatus = async () => {
     try {
       console.log('🔍 Checking setup status...')
+      console.log('📋 Environment check:')
+      console.log('  - NEXT_PUBLIC_SUPABASE_URL:', process.env.NEXT_PUBLIC_SUPABASE_URL ? '✅ Set' : '❌ Not set')
+      console.log('  - SUPABASE_SERVICE_ROLE_KEY:', process.env.SUPABASE_SERVICE_ROLE_KEY ? '✅ Set' : '❌ Not set')
+      console.log('  - NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY:', process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY ? '✅ Set' : '❌ Not set')
+      
       const response = await fetch('/api/setup/status', { 
         cache: 'no-store',
         headers: {
@@ -64,9 +69,8 @@ export default function SetupPage() {
       console.log('📊 Setup status:', data)
       
       if (data.setupComplete) {
-        // Setup already done, redirect to dashboard immediately
-        // Don't show toast on every page load - only if user manually visits /setup
-        console.log('✅ Setup complete - redirecting to dashboard')
+        // Setup already done (either via .env.local or database config), redirect to dashboard
+        console.log('✅ Setup complete - database ready, redirecting to dashboard')
         router.push('/dashboard')
         return
       } else if (data.needsAdmin) {

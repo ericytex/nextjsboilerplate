@@ -7,13 +7,15 @@ import { createSupabaseClient } from '@/lib/supabase-client'
  */
 export async function GET() {
   try {
-    // Check if we have Supabase credentials from environment
+    // Check if we have Supabase credentials from environment variables (.env.local)
+    // Next.js automatically loads .env.local variables into process.env
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
     const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || 
                     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
 
-    // If no URL, setup is definitely not complete
+    // If we have URL and at least one key from .env.local, check if database is ready
+    // If env vars exist, we should verify database is set up, not force setup
     if (!supabaseUrl) {
       return NextResponse.json({
         setupComplete: false,
@@ -22,28 +24,26 @@ export async function GET() {
       })
     }
 
-    // Try to get credentials from saved integration_configs if not in env
-    let finalServiceRoleKey = serviceRoleKey
-    let finalAnonKey = anonKey
-
-    if (!finalServiceRoleKey && !finalAnonKey) {
-      // No keys in env - try to get from integration_configs
-      // But we need at least anon key to read integration_configs...
-      // This is a chicken-and-egg problem, so we'll just return needsSetup
+    // If we have URL but no keys, check if we can get from database
+    // Otherwise, if we have keys from .env.local, use them directly
+    if (!serviceRoleKey && !anonKey) {
+      // No keys in .env.local - might be in database config
+      // But we need at least one key to check database
       return NextResponse.json({
         setupComplete: false,
-        message: 'Supabase credentials not found',
+        message: 'Supabase credentials not found in .env.local',
         needsSetup: true
       })
     }
 
-    // Try with service role key first (bypasses RLS)
-    // If not available, try with anon key
-    const keyToUse = finalServiceRoleKey || finalAnonKey
+    // Use credentials from .env.local (automatically loaded by Next.js)
+    // Priority: Service Role Key > Anon Key
+    const keyToUse = serviceRoleKey || anonKey
+    
     if (!keyToUse) {
       return NextResponse.json({
         setupComplete: false,
-        message: 'Supabase API key not found',
+        message: 'Supabase API key not found in .env.local',
         needsSetup: true
       })
     }

@@ -36,6 +36,9 @@ function SigninForm() {
 
   const checkDatabaseSetup = async () => {
     try {
+      // First check if env vars exist in .env.local
+      // If they do, we can skip setup check (env vars mean database should be ready)
+      // But we still verify database is actually accessible
       const response = await fetch('/api/setup/status', {
         cache: 'no-store',
         headers: { 'Cache-Control': 'no-cache' }
@@ -44,21 +47,25 @@ function SigninForm() {
       if (response.ok) {
         const data = await response.json()
         
-        // If setup is not complete, redirect to setup page
-        if (!data.setupComplete) {
-          console.log('⚠️ Database not set up - redirecting to setup')
-          toast.info('Database setup required', {
-            description: 'Please complete database setup first.'
-          })
-          router.push('/setup')
+        // If setup is complete (env vars exist and database is ready), allow signin
+        if (data.setupComplete) {
+          console.log('✅ Database ready - allowing signin')
           return
         }
+        
+        // If setup is not complete, redirect to setup page
+        console.log('⚠️ Database not set up - redirecting to setup')
+        toast.info('Database setup required', {
+          description: 'Please complete database setup first. Check your .env.local file for Supabase credentials.'
+        })
+        router.push('/setup')
+        return
       }
     } catch (error) {
       console.error('Error checking database setup:', error)
       // If we can't check, assume setup is needed
       toast.info('Database setup required', {
-        description: 'Please complete database setup first.'
+        description: 'Please complete database setup first. Check your .env.local file for Supabase credentials.'
       })
       router.push('/setup')
     }
