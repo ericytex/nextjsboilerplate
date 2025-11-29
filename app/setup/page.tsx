@@ -75,17 +75,17 @@ export default function SetupPage() {
             description: 'Found Supabase credentials in .env.local. Testing connection and verifying tables automatically...'
           })
           
-          // Auto-test connection if we have both URL and key
-          // Use a ref or state check to avoid multiple calls
+          // Wait a few seconds to show the form fields before starting auto-tests
           setTimeout(() => {
             console.log('🔄 Auto-testing connection with loaded credentials...')
             // Call testDatabaseConnection with the new config values
             testDatabaseConnectionWithConfig(newConfig)
-            // Also auto-verify using server-side Service Role Key (if available in env)
+            // After connection test, wait then verify tables
             setTimeout(() => {
+              console.log('🔄 Auto-verifying tables...')
               autoVerifyWithEnvVars(newConfig)
-            }, 1500)
-          }, 500)
+            }, 3000) // Wait 3 seconds after connection test
+          }, 3000) // Wait 3 seconds to show the form first
         } else if (data.hasEnvVars) {
           // Fallback - just show info without auto-testing
           setDatabaseConfig(prev => ({
@@ -131,13 +131,15 @@ export default function SetupPage() {
 
       if (data.connected) {
         setConnectionStatus('success')
-        toast.success('Database connection successful!')
+        toast.success('Database connection successful!', {
+          description: 'Waiting a moment before verifying tables...'
+        })
         
-        // Auto-verify tables after successful connection (using server-side Service Role Key if available)
+        // Wait a few seconds to show the success message, then verify tables
         setTimeout(() => {
           console.log('🔄 Auto-verifying tables...')
           autoVerifyWithEnvVars(config)
-        }, 1000)
+        }, 3000) // Wait 3 seconds to show connection success
       } else {
         setConnectionStatus('error')
         setErrorMessage(data.error || 'Connection failed')
@@ -174,18 +176,16 @@ export default function SetupPage() {
       const data = await response.json()
 
       if (data.success && data.tablesExist && data.accessible) {
-        // Tables exist and are accessible!
-        setTablesVerified(true)
-        setConnectionStatus('success')
-        setErrorMessage('')
-        toast.success('✅ Tables verified!', {
-          description: data.message
+        // Tables exist and are accessible! Now trigger full verification to ensure everything is set up
+        toast.success('✅ Initial verification passed!', {
+          description: 'Running full table verification...'
         })
-        // Auto-click Continue after a short delay
+        
+        // Wait a moment, then trigger the full "Verify Tables Created" flow
         setTimeout(() => {
-          console.log('🚀 Auto-proceeding to save database config...')
-          saveDatabaseConfig()
-        }, 1500)
+          console.log('🔄 Running full table verification...')
+          verifyTablesWithConfig(config)
+        }, 2000) // Wait 2 seconds before full verification
       } else if (data.needsServiceRoleKey) {
         // Can't verify without Service Role Key
         setTablesVerified(false)
@@ -203,17 +203,18 @@ export default function SetupPage() {
           `Note: If Service Role Key is in .env.local, it will be used automatically server-side.`
         )
       } else if (data.needsTable) {
-        // Tables don't exist - try to auto-create them
+        // Tables don't exist - trigger full verification which will auto-create them
         setTablesVerified(false)
         toast.info('Tables not found - attempting automatic creation...', {
-          description: 'Trying to create tables automatically using Database URL from env vars.',
-          duration: 10000
+          description: 'Trying to create tables automatically using Database URL from env vars. This may take a moment...',
+          duration: 15000
         })
         
-        // Try to auto-create tables using Database URL from env vars
+        // Wait a few seconds to show the message, then trigger full verification (which will auto-create)
         setTimeout(() => {
-          autoCreateTables(config)
-        }, 1000)
+          console.log('🔧 Triggering full verification to auto-create tables...')
+          verifyTablesWithConfig(config)
+        }, 3000) // Wait 3 seconds to show the message
       } else if (data.permissionIssue) {
         // Permission issue - try to verify with Service Role Key from env vars
         setTablesVerified(false)
@@ -222,11 +223,11 @@ export default function SetupPage() {
           duration: 15000
         })
         
-        // Try to verify tables using the full verification flow (which uses Service Role Key from env vars)
+        // Wait a few seconds to show the message, then try to verify tables using the full verification flow
         setTimeout(() => {
           console.log('🔄 Attempting to verify tables with Service Role Key from env vars...')
           verifyTablesWithConfig(config)
-        }, 1000)
+        }, 3000) // Wait 3 seconds to show the message
       } else {
         // Unknown status
         setTablesVerified(false)
@@ -277,13 +278,13 @@ export default function SetupPage() {
         setConnectionStatus('success')
         setErrorMessage('')
         toast.success('✅ Tables created and verified!', {
-          description: 'Tables were automatically created and are now accessible.'
+          description: 'Tables were automatically created and are now accessible. Waiting before proceeding...'
         })
-        // Auto-click Continue after a short delay
+        // Wait a few seconds to show creation success, then auto-click Continue
         setTimeout(() => {
           console.log('🚀 Auto-proceeding to save database config...')
           saveDatabaseConfig()
-        }, 2000)
+        }, 4000) // Wait 4 seconds to show creation success
       } else if (data.needsTable) {
         // Still need tables - Database URL might not be in env vars
         setTablesVerified(false)
@@ -379,14 +380,16 @@ export default function SetupPage() {
       if (response.ok && !data.needsTable && !data.permissionIssue) {
         // Tables exist and are accessible!
         setTablesVerified(true)
-        toast.success('✅ Tables verified! All database tables are accessible.')
+        toast.success('✅ Tables verified! All database tables are accessible.', {
+          description: 'Waiting before proceeding to next step...'
+        })
         setConnectionStatus('success')
         setErrorMessage('')
-        // Auto-click Continue after a short delay
+        // Wait a few seconds to show verification success, then auto-click Continue
         setTimeout(() => {
           console.log('🚀 Auto-proceeding to save database config...')
           saveDatabaseConfig()
-        }, 1500)
+        }, 4000) // Wait 4 seconds to show verification success
       } else if (data.policyIssue || (data.permissionIssue || data.needsServiceRoleKey)) {
         // Permission error or policy issue - need service role key
         setTablesVerified(false)
