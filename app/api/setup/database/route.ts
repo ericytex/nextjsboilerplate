@@ -47,10 +47,56 @@ export async function POST(request: Request) {
         code: configCheckError.code,
         message: configCheckError.message,
         hint: configCheckError.code === '42501' ? 'Permission denied (RLS)' : 
-              configCheckError.code === 'PGRST116' || configCheckError.code === '42P01' ? 'Table not found' :
+              (configCheckError.code === 'PGRST116' || configCheckError.code === 'PGRST205' || configCheckError.code === '42P01') ? 'Table not found' :
               'Unknown error'
       })
       tableCheckError = configCheckError
+      
+      // Check if it's a table missing error (PGRST205, PGRST116, or 42P01)
+      const isTableMissingError = configCheckError.code === 'PGRST205' || 
+                                  configCheckError.code === 'PGRST116' ||
+                                  configCheckError.code === '42P01' ||
+                                  configCheckError.message?.includes('Could not find the table') ||
+                                  configCheckError.message?.includes('relation') ||
+                                  configCheckError.message?.includes('does not exist')
+      
+      // If tables are missing and we have database URL + service role key, create them automatically
+      if (isTableMissingError && serviceRoleKey && databaseUrl) {
+        console.log('🔧 Tables missing - attempting automatic creation immediately...')
+        try {
+          const createResult = await createTablesAutomatically(projectUrl, serviceRoleKey, projectId, sql, databaseUrl)
+          
+          if (createResult.success) {
+            console.log('✅ Tables created! Waiting for schema cache refresh...')
+            // Wait for PostgREST to refresh schema cache
+            await new Promise(resolve => setTimeout(resolve, 3000))
+            
+            // Verify tables were created by checking again
+            const verifySupabase = createSupabaseClient(projectUrl, serviceRoleKey)
+            const { error: verifyError } = await verifySupabase
+              .from('integration_configs')
+              .select('id')
+              .limit(1)
+            
+            if (!verifyError) {
+              console.log('✅ Tables verified after automatic creation!')
+              // Tables exist now, continue with normal flow
+              tablesExist = true
+              tableCheckError = null
+            } else {
+              console.log('⚠️ Tables created but verification still failing:', verifyError.message)
+              // Continue to show error but indicate tables may exist
+              tableCheckError = verifyError
+            }
+          } else {
+            console.log('❌ Automatic table creation failed:', createResult.error)
+            // Continue to show error with SQL
+          }
+        } catch (autoCreateError: any) {
+          console.error('❌ Error during automatic table creation:', autoCreateError)
+          // Continue to show error with SQL
+        }
+      }
       
       // Check if it's a permission issue
       if (configCheckError.code === '42501' || 
@@ -172,12 +218,15 @@ WITH CHECK (true);`,
       }
       
       // Check if tables actually don't exist
+      // Include PGRST205 (table not found in schema cache) as a table missing error
       // Exclude policy errors (42P17 = infinite recursion, 42501 = permission denied)
-      const isTableMissing = (tableCheckError?.code === 'PGRST116' || 
+      const isTableMissing = (tableCheckError?.code === 'PGRST205' ||
+                            tableCheckError?.code === 'PGRST116' || 
                             tableCheckError?.code === '42P01') &&
                             tableCheckError?.code !== '42P17' &&
                             tableCheckError?.code !== '42501' &&
-                            (tableCheckError?.message?.includes('relation') ||
+                            (tableCheckError?.message?.includes('Could not find the table') ||
+                            tableCheckError?.message?.includes('relation') ||
                             tableCheckError?.message?.includes('does not exist') ||
                             tableCheckError?.message?.includes('table') ||
                             tableCheckError?.message?.includes('schema'))
