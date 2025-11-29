@@ -26,43 +26,65 @@ interface Subscription {
 
 export default function ProfilePage() {
   const [loading, setLoading] = useState(false)
+  const [profileLoading, setProfileLoading] = useState(true)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [subscriptionLoading, setSubscriptionLoading] = useState(true)
   const [formData, setFormData] = useState({
-    fullName: 'John Doe',
-    email: 'john@example.com',
-    phone: '+1 (555) 123-4567',
-    location: 'San Francisco, CA',
-    bio: 'Content creator passionate about AI and automation.',
-    company: 'AI Story Shorts',
-    website: 'https://aistoryshorts.com',
-    avatar: '/avatars/user.jpg'
+    fullName: '',
+    email: '',
+    phone: '',
+    location: '',
+    bio: '',
+    company: '',
+    website: '',
+    avatar: ''
   })
 
-  // Fetch user subscription
+  // Fetch user profile and subscription
   useEffect(() => {
-    const fetchSubscription = async () => {
+    const fetchData = async () => {
       try {
         const userId = localStorage.getItem('user_id')
         if (!userId) {
+          setProfileLoading(false)
           setSubscriptionLoading(false)
           return
         }
 
-        const response = await fetch(`/api/user/subscription?userId=${userId}`)
-        const data = await response.json()
+        // Fetch profile and subscription in parallel
+        const [profileResponse, subscriptionResponse] = await Promise.all([
+          fetch(`/api/user/profile?userId=${userId}`),
+          fetch(`/api/user/subscription?userId=${userId}`)
+        ])
 
-        if (data.success && data.subscription) {
-          setSubscription(data.subscription)
+        const profileData = await profileResponse.json()
+        const subscriptionData = await subscriptionResponse.json()
+
+        if (profileData.success && profileData.profile) {
+          setFormData({
+            fullName: profileData.profile.fullName || '',
+            email: profileData.profile.email || '',
+            phone: profileData.profile.phone || '',
+            location: profileData.profile.location || '',
+            bio: profileData.profile.bio || '',
+            company: profileData.profile.company || '',
+            website: profileData.profile.website || '',
+            avatar: profileData.profile.avatar || ''
+          })
+        }
+
+        if (subscriptionData.success && subscriptionData.subscription) {
+          setSubscription(subscriptionData.subscription)
         }
       } catch (error) {
-        console.error('Failed to fetch subscription:', error)
+        console.error('Failed to fetch data:', error)
       } finally {
+        setProfileLoading(false)
         setSubscriptionLoading(false)
       }
     }
 
-    fetchSubscription()
+    fetchData()
   }, [])
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -70,11 +92,37 @@ export default function ProfilePage() {
     setLoading(true)
 
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      toast.success('Profile updated successfully')
+      const userId = localStorage.getItem('user_id')
+      if (!userId) {
+        toast.error('Please sign in to update your profile')
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch('/api/user/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          fullName: formData.fullName,
+          phone: formData.phone,
+          location: formData.location,
+          bio: formData.bio,
+          company: formData.company,
+          website: formData.website,
+          avatar: formData.avatar
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success('Profile updated successfully')
+      } else {
+        toast.error(data.error || 'Failed to update profile')
+      }
     } catch (error) {
+      console.error('Error updating profile:', error)
       toast.error('Failed to update profile')
     } finally {
       setLoading(false)
@@ -84,10 +132,27 @@ export default function ProfilePage() {
   const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (file) {
-      // TODO: Upload to storage service
+      // Validate file size (max 2MB)
+      if (file.size > 2 * 1024 * 1024) {
+        toast.error('Image size must be less than 2MB')
+        return
+      }
+
+      // Validate file type
+      if (!file.type.startsWith('image/')) {
+        toast.error('Please select an image file')
+        return
+      }
+
+      // For now, convert to base64 data URL
+      // TODO: Upload to storage service (Supabase Storage, AWS S3, etc.)
       const reader = new FileReader()
       reader.onloadend = () => {
         setFormData({ ...formData, avatar: reader.result as string })
+        toast.info('Avatar preview updated. Save to persist changes.')
+      }
+      reader.onerror = () => {
+        toast.error('Failed to read image file')
       }
       reader.readAsDataURL(file)
     }
@@ -103,17 +168,22 @@ export default function ProfilePage() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit}>
-          <div className="grid gap-6 md:grid-cols-2">
-            {/* Avatar Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle>Profile Picture</CardTitle>
-                <CardDescription>
-                  Upload a new profile picture. Recommended size: 400x400px
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
+        {profileLoading ? (
+          <div className="text-center py-8">
+            <p className="text-muted-foreground">Loading profile...</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit}>
+            <div className="grid gap-6 md:grid-cols-2">
+              {/* Avatar Section */}
+              <Card>
+                <CardHeader>
+                  <CardTitle>Profile Picture</CardTitle>
+                  <CardDescription>
+                    Upload a new profile picture. Recommended size: 400x400px
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
                 <div className="flex items-center gap-6">
                   <Avatar className="h-24 w-24">
                     <AvatarImage src={formData.avatar} alt={formData.fullName} />
@@ -327,16 +397,17 @@ export default function ProfilePage() {
             </Card>
           </div>
 
-          <div className="mt-6 flex justify-end gap-4">
-            <Button type="button" variant="outline">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading}>
-              <Save className="h-4 w-4 mr-2" />
-              {loading ? 'Saving...' : 'Save Changes'}
-            </Button>
-          </div>
-        </form>
+            <div className="mt-6 flex justify-end gap-4">
+              <Button type="button" variant="outline" onClick={() => window.location.reload()}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={loading}>
+                <Save className="h-4 w-4 mr-2" />
+                {loading ? 'Saving...' : 'Save Changes'}
+              </Button>
+            </div>
+          </form>
+        )}
       </div>
     </div>
   )
