@@ -55,16 +55,39 @@ export default function SetupPage() {
       if (response.ok) {
         const data = await response.json()
         
-        if (data.hasEnvVars) {
+        // Check if we have the required env vars (using the actual API response structure)
+        const hasUrl = data.supabaseUrl
+        const hasKey = data.anonKey
+        
+        if (hasUrl && hasKey) {
           console.log('📋 Found environment variables in .env.local')
           // Pre-fill form with env vars
+          const newConfig = {
+            projectUrl: data.supabaseUrl || '',
+            anonKey: data.anonKey || '',
+            serviceRoleKey: '', // Don't pre-fill service role key for security
+            databaseUrl: '' // Don't pre-fill database URL for security
+          }
+          
+          setDatabaseConfig(newConfig)
+          
+          toast.info('Environment variables loaded', {
+            description: 'Found Supabase credentials in .env.local. Testing connection automatically...'
+          })
+          
+          // Auto-test connection if we have both URL and key
+          // Use a ref or state check to avoid multiple calls
+          setTimeout(() => {
+            console.log('🔄 Auto-testing connection with loaded credentials...')
+            // Call testDatabaseConnection with the new config values
+            testDatabaseConnectionWithConfig(newConfig)
+          }, 500)
+        } else if (data.hasEnvVars) {
+          // Fallback - just show info without auto-testing
           setDatabaseConfig(prev => ({
             ...prev,
             projectUrl: data.supabaseUrl || prev.projectUrl,
             anonKey: data.anonKey || prev.anonKey,
-            // Service role key exists but we don't expose it
-            // User can add it manually if needed
-            serviceRoleKey: data.hasServiceRoleKey ? prev.serviceRoleKey : prev.serviceRoleKey
           }))
           
           toast.info('Environment variables loaded', {
@@ -74,6 +97,163 @@ export default function SetupPage() {
       }
     } catch (error) {
       console.error('Error loading env vars:', error)
+    }
+  }
+
+  // Helper function to test connection with specific config
+  const testDatabaseConnectionWithConfig = async (config: typeof databaseConfig) => {
+    const projectUrl = config.projectUrl?.trim()
+    const anonKey = config.anonKey?.trim()
+    
+    if (!projectUrl || !anonKey) {
+      return
+    }
+
+    setTesting(true)
+    setConnectionStatus('testing')
+    setErrorMessage('')
+
+    try {
+      const response = await fetch('/api/setup/test-database', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          url: projectUrl,
+          key: anonKey
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.connected) {
+        setConnectionStatus('success')
+        toast.success('Database connection successful!')
+        
+        // Auto-verify tables after successful connection
+        setTimeout(() => {
+          console.log('🔄 Auto-verifying tables...')
+          verifyTablesWithConfig(config)
+        }, 1000)
+      } else {
+        setConnectionStatus('error')
+        setErrorMessage(data.error || 'Connection failed')
+        toast.error(data.error || 'Connection failed')
+      }
+    } catch (error: any) {
+      setConnectionStatus('error')
+      setErrorMessage(error.message || 'Failed to test connection')
+      toast.error('Failed to test connection')
+    } finally {
+      setTesting(false)
+    }
+  }
+
+  // Helper function to verify tables with specific config
+  const verifyTablesWithConfig = async (config: typeof databaseConfig) => {
+    const projectUrl = config.projectUrl?.trim()
+    const anonKey = config.anonKey?.trim()
+    
+    if (!projectUrl || !anonKey) {
+      return
+    }
+
+    setVerifyingTables(true)
+    setTablesVerified(false)
+    setErrorMessage('')
+
+    try {
+      // First, run comprehensive diagnostics
+      let diagnosticData: any = null
+      try {
+        const diagnosticResponse = await fetch('/api/setup/check-tables', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectUrl: projectUrl,
+            anonKey: anonKey,
+            serviceRoleKey: config.serviceRoleKey?.trim() || ''
+          })
+        })
+        diagnosticData = await diagnosticResponse.json()
+        console.log('📊 Table Diagnostics:', diagnosticData)
+      } catch (diagError) {
+        console.warn('Diagnostics failed, continuing with regular check:', diagError)
+      }
+
+      // Now try to save config
+      const response = await fetch('/api/setup/database', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectUrl: projectUrl,
+          anonKey: anonKey,
+          serviceRoleKey: config.serviceRoleKey?.trim() || '',
+          databaseUrl: config.databaseUrl?.trim() || ''
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && !data.needsTable && !data.permissionIssue) {
+        // Tables exist and are accessible!
+        setTablesVerified(true)
+        toast.success('✅ Tables verified! All database tables are accessible.')
+        setConnectionStatus('success')
+        setErrorMessage('')
+      } else if (data.policyIssue || (data.permissionIssue || data.needsServiceRoleKey)) {
+        // Permission error or policy issue - need service role key
+        setTablesVerified(false)
+        const isPolicyIssue = data.policyIssue || data.error?.includes('infinite recursion')
+        toast.warning(isPolicyIssue ? 'RLS Policy Issue Detected' : 'Permission Issue Detected', {
+          description: isPolicyIssue 
+            ? 'Tables exist but RLS policy has infinite recursion. Add Service Role Key or fix the policy.'
+            : 'Tables exist but RLS is blocking access. Add Service Role Key to proceed.',
+          duration: 15000
+        })
+        setErrorMessage(
+          (isPolicyIssue ? `🔄 RLS Policy Issue Detected\n\n` : `🔒 Permission Issue Detected\n\n`) +
+          `✅ Good news: Your tables exist in Supabase!\n` +
+          (isPolicyIssue 
+            ? `❌ Problem: Infinite recursion detected in RLS policy for "users" table.\n` +
+              `This happens when a policy references the same table it protects.\n\n`
+            : `❌ Problem: Row Level Security (RLS) is blocking access with the Anon/Publishable key.\n\n`) +
+          `💡 Solution:\n` +
+          `1. Add your Service Role Key in the "Service Role Key (Optional)" field above\n` +
+          `2. Click "Verify Tables Created" again\n\n` +
+          `The Service Role Key bypasses RLS and allows setup to complete.\n\n` +
+          (data.fixPolicySql ? `🔧 Alternative: Fix the policy in Supabase SQL Editor:\n\n\`\`\`sql\n${data.fixPolicySql}\n\`\`\`\n\n` : '') +
+          `Diagnostic: ${diagnosticData?.recommendation || data.details || data.error}\n\n` +
+          (diagnosticData?.diagnostics ? `Details:\n${diagnosticData.diagnostics.map((d: any) => `- ${d.step}: ${d.error || 'OK'}`).join('\n')}` : '')
+        )
+      } else if (data.needsTable) {
+        // Tables still don't exist
+        setTablesVerified(false)
+        toast.error('Tables not found', {
+          description: diagnosticData?.recommendation || 'Please make sure you ran the SQL in Supabase SQL Editor and it completed successfully.',
+          duration: 15000
+        })
+        setErrorMessage(
+          `❌ Tables Not Accessible\n\n` +
+          `Diagnostic Results:\n` +
+          (diagnosticData?.diagnostics ? diagnosticData.diagnostics.map((d: any) => 
+            `${d.success ? '✅' : '❌'} ${d.step}${d.error ? `: ${d.error}` : ''}`
+          ).join('\n') : 'No diagnostics available') +
+          `\n\n` +
+          `Recommendation: ${diagnosticData?.recommendation || data.error}\n\n` +
+          `Please verify:\n` +
+          `1. You copied the entire SQL (from CREATE TABLE to the end)\n` +
+          `2. You clicked "Run" in Supabase SQL Editor\n` +
+          `3. You saw a "Success" message\n` +
+          `4. Check Supabase Table Editor to confirm tables exist\n\n` +
+          `If tables exist but you see permission errors, add Service Role Key and try again.`
+        )
+      }
+    } catch (error: any) {
+      setTablesVerified(false)
+      toast.error('Failed to verify tables')
+      setErrorMessage(error.message || 'Failed to verify tables')
+    } finally {
+      setVerifyingTables(false)
     }
   }
 
