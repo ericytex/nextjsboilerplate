@@ -23,15 +23,47 @@ export async function POST(request: Request) {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     if (!supabaseUrl || !serviceRoleKey) {
-      // Security: Don't expose configuration errors to users
-      console.error('Database configuration error')
+      // Database not configured - redirect to setup
+      console.error('Database configuration error - setup required')
+      return NextResponse.json(
+        { 
+          error: 'Database not configured',
+          needsSetup: true,
+          message: 'Please complete database setup first.'
+        },
+        { status: 503 } // Service Unavailable
+      )
+    }
+
+    const supabase = createSupabaseClient(supabaseUrl, serviceRoleKey)
+
+    // Check if database tables exist by trying to query users table
+    const { error: tableCheckError } = await supabase
+      .from('users')
+      .select('id')
+      .limit(1)
+
+    if (tableCheckError) {
+      // Table doesn't exist or database error
+      if (tableCheckError.code === 'PGRST116' || tableCheckError.code === '42P01') {
+        console.error('Database tables not found - setup required')
+        return NextResponse.json(
+          { 
+            error: 'Database not set up',
+            needsSetup: true,
+            message: 'Please complete database setup first.'
+          },
+          { status: 503 } // Service Unavailable
+        )
+      }
+      
+      // Other database errors - log but don't expose
+      console.error('Database error:', tableCheckError)
       return NextResponse.json(
         { error: 'Invalid email or password' },
         { status: 401 }
       )
     }
-
-    const supabase = createSupabaseClient(supabaseUrl, serviceRoleKey)
 
     // Find user by email
     const { data: user, error: findError } = await supabase

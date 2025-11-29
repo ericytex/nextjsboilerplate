@@ -21,6 +21,11 @@ function SigninForm() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // Check database setup status on mount
+  useEffect(() => {
+    checkDatabaseSetup()
+  }, [])
+
   // Pre-fill email from query params if redirected from signup
   useEffect(() => {
     const email = searchParams.get('email')
@@ -28,6 +33,36 @@ function SigninForm() {
       setFormData(prev => ({ ...prev, email }))
     }
   }, [searchParams])
+
+  const checkDatabaseSetup = async () => {
+    try {
+      const response = await fetch('/api/setup/status', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        
+        // If setup is not complete, redirect to setup page
+        if (!data.setupComplete) {
+          console.log('⚠️ Database not set up - redirecting to setup')
+          toast.info('Database setup required', {
+            description: 'Please complete database setup first.'
+          })
+          router.push('/setup')
+          return
+        }
+      }
+    } catch (error) {
+      console.error('Error checking database setup:', error)
+      // If we can't check, assume setup is needed
+      toast.info('Database setup required', {
+        description: 'Please complete database setup first.'
+      })
+      router.push('/setup')
+    }
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -63,6 +98,15 @@ function SigninForm() {
         // Redirect to dashboard after login
         router.push('/dashboard')
       } else {
+        // Check if database setup is needed
+        if (data.needsSetup && response.status === 503) {
+          toast.error('Database setup required', {
+            description: 'Please complete database setup before signing in.'
+          })
+          router.push('/setup')
+          return
+        }
+        
         // Security: Show generic error message to prevent email enumeration
         // Don't reveal whether user exists or password is wrong
         const errorMessage = data.error || 'Invalid email or password'

@@ -29,21 +29,48 @@ export async function POST(request: Request) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    if (!supabaseUrl) {
+    if (!supabaseUrl || !serviceRoleKey) {
+      // Database not configured - redirect to setup
+      console.error('Database configuration error - setup required')
       return NextResponse.json(
-        { error: 'Database not configured. Please contact support.' },
-        { status: 500 }
-      )
-    }
-
-    if (!serviceRoleKey) {
-      return NextResponse.json(
-        { error: 'Service Role Key not configured. Please contact support.' },
-        { status: 500 }
+        { 
+          error: 'Database not configured',
+          needsSetup: true,
+          message: 'Please complete database setup first.'
+        },
+        { status: 503 } // Service Unavailable
       )
     }
 
     const supabase = createSupabaseClient(supabaseUrl, serviceRoleKey)
+
+    // Check if database tables exist by trying to query users table
+    const { error: tableCheckError } = await supabase
+      .from('users')
+      .select('id')
+      .limit(1)
+
+    if (tableCheckError) {
+      // Table doesn't exist or database error
+      if (tableCheckError.code === 'PGRST116' || tableCheckError.code === '42P01') {
+        console.error('Database tables not found - setup required')
+        return NextResponse.json(
+          { 
+            error: 'Database not set up',
+            needsSetup: true,
+            message: 'Please complete database setup first.'
+          },
+          { status: 503 } // Service Unavailable
+        )
+      }
+      
+      // Other database errors
+      console.error('Database error:', tableCheckError)
+      return NextResponse.json(
+        { error: 'Database error. Please try again later.' },
+        { status: 500 }
+      )
+    }
 
     // Check if user with this email already exists
     const { data: existingUser, error: checkError } = await supabase
