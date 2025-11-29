@@ -46,36 +46,56 @@ export default function SetupPage() {
 
   const checkSetupStatus = async () => {
     try {
-      const response = await fetch('/api/setup/status', { cache: 'no-store' })
+      console.log('🔍 Checking setup status...')
+      const response = await fetch('/api/setup/status', { 
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      })
       
       if (!response.ok) {
         // API error - continue with setup
-        console.log('Setup status check failed:', response.status)
+        console.log('⚠️ Setup status check failed:', response.status)
         return
       }
       
       const data = await response.json()
+      console.log('📊 Setup status:', data)
       
       if (data.setupComplete) {
-        // Setup already done, redirect to dashboard
-        toast.info('Setup already complete. Redirecting...')
-        setTimeout(() => {
-          router.push('/dashboard')
-        }, 1000)
+        // Setup already done, redirect to dashboard immediately
+        console.log('✅ Setup complete - redirecting to dashboard')
+        toast.success('Setup already complete! Redirecting to dashboard...')
+        router.push('/dashboard')
+        return
       } else if (data.needsAdmin) {
         // Database configured but no admin - go to admin step
+        console.log('👤 Admin user needed')
         setStep('admin')
       } else if (data.needsTables) {
         // Database configured but tables don't exist
-        // Stay on database step
+        console.log('📊 Tables needed')
         setStep('database')
+      } else if (data.needsServiceRoleKey) {
+        // RLS blocking - need service role key
+        console.log('🔑 Service Role Key needed to verify setup')
+        setStep('database')
+        toast.warning('Service Role Key needed to verify setup status', {
+          description: 'Add Service Role Key in database setup to check if admin exists.'
+        })
       } else if (data.needsSetup) {
         // No Supabase configured - stay on database step
+        console.log('⚙️ Setup needed')
+        setStep('database')
+      } else {
+        // Unknown state - stay on database step
+        console.log('❓ Unknown setup state')
         setStep('database')
       }
     } catch (error) {
       // Setup not complete, continue with setup flow
-      console.log('Setup check error:', error)
+      console.error('❌ Setup check error:', error)
       // Stay on database step
       setStep('database')
     }
