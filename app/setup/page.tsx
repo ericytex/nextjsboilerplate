@@ -39,10 +39,43 @@ export default function SetupPage() {
   const [verifyingTables, setVerifyingTables] = useState(false)
   const [tablesVerified, setTablesVerified] = useState(false)
 
-  // Check if setup is already complete
+  // Check if setup is already complete and load env vars
   useEffect(() => {
+    loadEnvVars()
     checkSetupStatus()
   }, [])
+
+  const loadEnvVars = async () => {
+    try {
+      const response = await fetch('/api/setup/env-vars', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        
+        if (data.hasEnvVars) {
+          console.log('📋 Found environment variables in .env.local')
+          // Pre-fill form with env vars
+          setDatabaseConfig(prev => ({
+            ...prev,
+            projectUrl: data.supabaseUrl || prev.projectUrl,
+            anonKey: data.anonKey || prev.anonKey,
+            // Service role key exists but we don't expose it
+            // User can add it manually if needed
+            serviceRoleKey: data.hasServiceRoleKey ? prev.serviceRoleKey : prev.serviceRoleKey
+          }))
+          
+          toast.info('Environment variables loaded', {
+            description: 'Found Supabase credentials in .env.local. You can test the connection or edit if needed.'
+          })
+        }
+      }
+    } catch (error) {
+      console.error('Error loading env vars:', error)
+    }
+  }
 
   const checkSetupStatus = async () => {
     try {
