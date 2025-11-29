@@ -32,6 +32,11 @@ export async function POST(request: Request) {
     let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
     let serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
+    // Log what we found (without exposing sensitive data)
+    console.log('🔑 Admin creation - checking for Service Role Key:')
+    console.log('  - SUPABASE_SERVICE_ROLE_KEY in env:', serviceRoleKey ? `${serviceRoleKey.substring(0, 20)}...` : 'NOT FOUND')
+    console.log('  - Supabase URL:', supabaseUrl ? supabaseUrl : 'NOT FOUND')
+
     // If not in env, try to get from saved integration config
     if (!supabaseUrl || !serviceRoleKey) {
       // Try to get from integration_configs if it exists
@@ -74,15 +79,20 @@ export async function POST(request: Request) {
     }
     
     if (!serviceRoleKey) {
+      console.error('❌ Service Role Key not found in environment variables or saved config')
+      console.error('   Expected: SUPABASE_SERVICE_ROLE_KEY in .env.local')
       return NextResponse.json(
         { 
           error: 'Service Role Key required for admin creation.',
-          details: 'Admin user creation requires Service Role Key to bypass RLS policies. Please add your Service Role Key in the database setup step.',
-          needsServiceRoleKey: true
+          details: 'Admin user creation requires Service Role Key to bypass RLS policies. Please add SUPABASE_SERVICE_ROLE_KEY to your .env.local file, or add it in the database setup step.',
+          needsServiceRoleKey: true,
+          hint: 'The Service Role Key should be in your .env.local file as SUPABASE_SERVICE_ROLE_KEY'
         },
         { status: 400 }
       )
     }
+    
+    console.log('✅ Service Role Key found - proceeding with admin creation')
 
     const supabase = createSupabaseClient(supabaseUrl, serviceRoleKey)
 
