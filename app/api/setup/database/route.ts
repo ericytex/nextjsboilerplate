@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseClient } from '@/lib/supabase-client'
+import { Client } from 'pg'
 
 /**
  * Save database configuration and create all required tables
@@ -279,11 +280,12 @@ WITH CHECK (true);`,
                             saveError.message?.includes('schema')
       
       if (isTableMissing) {
-        // Try to automatically create tables using Management API
-        // This requires service role key
-        if (serviceRoleKey) {
+        // Try to automatically create tables using direct PostgreSQL connection
+        // This requires database URL and service role key
+        if (serviceRoleKey && databaseUrl) {
           try {
-            const createResult = await createTablesAutomatically(projectUrl, serviceRoleKey, projectId, sql)
+            console.log('🔧 Attempting to create tables automatically...')
+            const createResult = await createTablesAutomatically(projectUrl, serviceRoleKey, projectId, sql, databaseUrl)
             if (createResult.success) {
               // Tables created! Now try to save config again
               const { error: retryError } = await supabase
@@ -344,15 +346,21 @@ WITH CHECK (true);`,
             }, { status: 400 })
           }
         } else {
-          // No service role key, return SQL for manual creation
+          // Missing service role key or database URL for automatic creation
+          const missingItems = []
+          if (!serviceRoleKey) missingItems.push('Service Role Key')
+          if (!databaseUrl) missingItems.push('Database URL')
+          
           return NextResponse.json({
             needsTable: true,
             sql: sql,
             error: 'Database tables not found. Please create them first.',
-            instructions: 'Copy the SQL below and run it in Supabase SQL Editor. Or add Service Role Key to enable automatic creation.',
+            instructions: `Copy the SQL below and run it in Supabase SQL Editor. Or add ${missingItems.join(' and ')} to enable automatic creation.`,
             sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
             details: saveError.message,
-            needsServiceRoleKey: true
+            needsServiceRoleKey: !serviceRoleKey,
+            needsDatabaseUrl: !databaseUrl,
+            canAutoCreate: false
           }, { status: 400 })
         }
       }
@@ -405,28 +413,88 @@ WITH CHECK (true);`,
 }
 
 /**
- * Attempt to automatically create tables
- * Note: Supabase doesn't support executing arbitrary SQL via REST API for security reasons.
- * This function is a placeholder for future implementation using Supabase Edge Functions
- * or Management API when available.
+ * Attempt to automatically create tables using direct PostgreSQL connection
+ * Uses the database URL to connect directly and execute SQL
  */
 async function createTablesAutomatically(
   projectUrl: string,
   serviceRoleKey: string,
   projectId: string,
-  sql: string
+  sql: string,
+  databaseUrl?: string
 ): Promise<{ success: boolean; error?: string }> {
-  // Supabase doesn't currently support executing arbitrary SQL via REST API
-  // This would require:
-  // 1. Supabase Edge Function with database access
-  // 2. Direct PostgreSQL connection (requires pg library)
-  // 3. Supabase Management API (requires special access tokens)
-  
-  // For now, we'll return false and provide clear instructions
-  // Future enhancement: Create a Supabase Edge Function that can execute SQL
-  return {
-    success: false,
-    error: 'Automatic table creation requires manual SQL execution. Supabase doesn\'t support arbitrary SQL execution via REST API for security reasons. Please use the SQL Editor.'
+  try {
+    // If no database URL provided, we can't connect directly
+    if (!databaseUrl) {
+      return {
+        success: false,
+        error: 'Database URL is required for automatic table creation. Please provide it in the setup form.'
+      }
+    }
+
+    // Parse the database URL and create PostgreSQL client
+    // Format: postgresql://postgres:[password]@db.[ref].supabase.co:5432/postgres
+    const client = new Client({
+      connectionString: databaseUrl,
+      ssl: {
+        rejectUnauthorized: false // Supabase uses SSL
+      }
+    })
+
+    try {
+      await client.connect()
+      console.log('✅ Connected to PostgreSQL database')
+
+      // Execute the SQL schema
+      // Split by semicolons and execute each statement
+      const statements = sql
+        .split(';')
+        .map(s => s.trim())
+        .filter(s => s.length > 0 && !s.startsWith('--'))
+
+      for (const statement of statements) {
+        if (statement.trim()) {
+          try {
+            await client.query(statement)
+            console.log('✅ Executed SQL statement')
+          } catch (queryError: any) {
+            // Ignore errors for IF NOT EXISTS statements (tables might already exist)
+            if (!queryError.message?.includes('already exists') && 
+                !queryError.message?.includes('duplicate')) {
+              console.warn('⚠️ SQL statement warning:', queryError.message)
+              // Continue with other statements
+            }
+          }
+        }
+      }
+
+      // Refresh PostgREST schema cache
+      try {
+        await client.query("NOTIFY pgrst, 'reload schema'")
+        console.log('✅ Refreshed PostgREST schema cache')
+      } catch (notifyError) {
+        console.warn('⚠️ Could not refresh schema cache:', notifyError)
+        // Not critical, continue
+      }
+
+      await client.end()
+      console.log('✅ Tables created successfully')
+      
+      return {
+        success: true
+      }
+    } catch (connectError: any) {
+      await client.end().catch(() => {}) // Try to close connection
+      return {
+        success: false,
+        error: `Failed to connect to database: ${connectError.message}`
+      }
+    }
+  } catch (error: any) {
+    return {
+      success: false,
+      error: `Failed to create tables: ${error.message}`
+    }
   }
 }
 
