@@ -9,6 +9,7 @@ import { useRouter } from "next/navigation"
 
 export default function SigninPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     email: '',
@@ -16,25 +17,53 @@ export default function SigninPage() {
   })
   const [loading, setLoading] = useState(false)
 
+  // Pre-fill email from query params if redirected from signup
+  useEffect(() => {
+    const email = searchParams.get('email')
+    if (email) {
+      setFormData(prev => ({ ...prev, email }))
+    }
+  }, [searchParams])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    // Simulate login process
     try {
-      // TODO: Replace with actual login API call
-      // await fetch('/api/auth/signin', { method: 'POST', body: JSON.stringify(formData) })
-      
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Set session flag for dashboard access
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('user_session', 'true')
-        localStorage.setItem('has_visited_dashboard', 'true')
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Sign in successful
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user_session', 'true')
+          localStorage.setItem('has_visited_dashboard', 'true')
+          localStorage.setItem('user_id', data.user.id)
+          localStorage.setItem('user_email', data.user.email)
+          localStorage.setItem('user_role', data.user.role)
+        }
+        
+        // Redirect to dashboard after login
+        router.push('/dashboard')
+      } else {
+        // Handle specific error cases
+        if (data.userNotFound) {
+          // User doesn't exist - suggest signup
+          if (confirm('No account found with this email. Would you like to sign up instead?')) {
+            router.push(`/signup?email=${encodeURIComponent(formData.email)}`)
+          }
+        } else {
+          alert(data.error || 'Sign in failed. Please try again.')
+        }
       }
-      
-      // Redirect to dashboard after login
-      router.push('/dashboard')
     } catch (error) {
       console.error('Signin error:', error)
       alert('Sign in failed. Please try again.')

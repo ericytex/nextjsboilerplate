@@ -4,11 +4,12 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { useState } from "react"
-import { useRouter } from "next/navigation"
+import { useState, useEffect } from "react"
+import { useRouter, useSearchParams } from "next/navigation"
 
 export default function SignupPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [showPassword, setShowPassword] = useState(false)
   const [formData, setFormData] = useState({
     fullName: '',
@@ -17,21 +18,51 @@ export default function SignupPage() {
   })
   const [loading, setLoading] = useState(false)
 
+  // Pre-fill email from query params if redirected from signin
+  useEffect(() => {
+    const email = searchParams.get('email')
+    if (email) {
+      setFormData(prev => ({ ...prev, email }))
+    }
+  }, [searchParams])
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
 
-    // Simulate signup process
-    // In production, this would call your authentication API
     try {
-      // TODO: Replace with actual signup API call
-      // await fetch('/api/auth/signup', { method: 'POST', body: JSON.stringify(formData) })
-      
-      // Simulate API delay
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      // Redirect to pricing page with trial flag
-      router.push('/pricing?plan=basic&trial=true')
+      const response = await fetch('/api/auth/signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: formData.email.trim(),
+          password: formData.password,
+          fullName: formData.fullName.trim()
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok) {
+        // Account created successfully
+        if (typeof window !== 'undefined') {
+          localStorage.setItem('user_session', 'true')
+          localStorage.setItem('user_id', data.user.id)
+          localStorage.setItem('user_email', data.user.email)
+        }
+        
+        // Redirect to pricing page with trial flag
+        router.push('/pricing?plan=basic&trial=true')
+      } else {
+        // Handle specific error cases
+        if (data.userExists) {
+          // User already exists - redirect to signin
+          alert('An account with this email already exists. Redirecting to sign in...')
+          router.push(`/signin?email=${encodeURIComponent(formData.email)}`)
+        } else {
+          alert(data.error || 'Signup failed. Please try again.')
+        }
+      }
     } catch (error) {
       console.error('Signup error:', error)
       alert('Signup failed. Please try again.')
