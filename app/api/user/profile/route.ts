@@ -7,6 +7,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createSupabaseClient } from '@/lib/supabase-client'
 import { logActivity, extractRequestInfo } from '@/lib/activity-logger'
+import { DEFAULT_AVATAR } from '@/lib/defaults'
 import bcrypt from 'bcryptjs'
 
 export const dynamic = 'force-dynamic'
@@ -69,7 +70,7 @@ export async function GET(request: NextRequest) {
       id: user.id,
       email: user.email,
       fullName: user.full_name || '',
-      avatar: user.avatar_url || '',
+      avatar: user.avatar_url || DEFAULT_AVATAR,
       phone: settings?.settings?.phone || '',
       location: settings?.settings?.location || '',
       bio: settings?.settings?.bio || '',

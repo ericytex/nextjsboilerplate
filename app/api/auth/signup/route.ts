@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseClient } from '@/lib/supabase-client'
 import { logActivity, extractRequestInfo } from '@/lib/activity-logger'
+import { DEFAULT_AVATAR } from '@/lib/defaults'
 import bcrypt from 'bcryptjs'
 
 /**
@@ -112,7 +113,8 @@ export async function POST(request: Request) {
         full_name: fullName,
         password_hash: passwordHash,
         role: 'user',
-        email_verified: false
+        email_verified: false,
+        avatar_url: DEFAULT_AVATAR
       })
       .select()
       .single()

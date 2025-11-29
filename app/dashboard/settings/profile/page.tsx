@@ -10,6 +10,7 @@ import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import { Save, Upload, User, Mail, Phone, MapPin, Calendar, Crown } from "lucide-react"
 import { toast } from "sonner"
+import { DEFAULT_AVATAR, getAvatarFallback } from "@/lib/defaults"
 
 interface Subscription {
   id: string
@@ -69,7 +70,7 @@ export default function ProfilePage() {
             bio: profileData.profile.bio || '',
             company: profileData.profile.company || '',
             website: profileData.profile.website || '',
-            avatar: profileData.profile.avatar || ''
+            avatar: profileData.profile.avatar || DEFAULT_AVATAR
           })
         }
 
@@ -186,9 +187,12 @@ export default function ProfilePage() {
                 <CardContent>
                 <div className="flex items-center gap-6">
                   <Avatar className="h-24 w-24">
-                    <AvatarImage src={formData.avatar} alt={formData.fullName} />
+                    <AvatarImage 
+                      src={formData.avatar || DEFAULT_AVATAR} 
+                      alt={formData.fullName || 'User'} 
+                    />
                     <AvatarFallback className="text-2xl">
-                      {formData.fullName.split(' ').map(n => n[0]).join('')}
+                      {getAvatarFallback(formData.fullName)}
                     </AvatarFallback>
                   </Avatar>
                   <div className="flex flex-col gap-2">
