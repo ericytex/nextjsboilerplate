@@ -81,6 +81,10 @@ export default function SetupPage() {
             console.log('🔄 Auto-testing connection with loaded credentials...')
             // Call testDatabaseConnection with the new config values
             testDatabaseConnectionWithConfig(newConfig)
+            // Also auto-verify using server-side Service Role Key (if available in env)
+            setTimeout(() => {
+              autoVerifyWithEnvVars(newConfig)
+            }, 1500)
           }, 500)
         } else if (data.hasEnvVars) {
           // Fallback - just show info without auto-testing
@@ -129,10 +133,10 @@ export default function SetupPage() {
         setConnectionStatus('success')
         toast.success('Database connection successful!')
         
-        // Auto-verify tables after successful connection
+        // Auto-verify tables after successful connection (using server-side Service Role Key if available)
         setTimeout(() => {
           console.log('🔄 Auto-verifying tables...')
-          verifyTablesWithConfig(config)
+          autoVerifyWithEnvVars(config)
         }, 1000)
       } else {
         setConnectionStatus('error')
@@ -145,6 +149,90 @@ export default function SetupPage() {
       toast.error('Failed to test connection')
     } finally {
       setTesting(false)
+    }
+  }
+
+  // Auto-verify using Service Role Key from env vars (server-side)
+  const autoVerifyWithEnvVars = async (config: typeof databaseConfig) => {
+    const projectUrl = config.projectUrl?.trim()
+    const anonKey = config.anonKey?.trim()
+    
+    if (!projectUrl || !anonKey) {
+      return
+    }
+
+    try {
+      const response = await fetch('/api/setup/auto-verify', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectUrl: projectUrl,
+          anonKey: anonKey
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.tablesExist && data.accessible) {
+        // Tables exist and are accessible!
+        setTablesVerified(true)
+        setConnectionStatus('success')
+        setErrorMessage('')
+        toast.success('✅ Tables verified!', {
+          description: data.message
+        })
+      } else if (data.needsServiceRoleKey) {
+        // Can't verify without Service Role Key
+        setTablesVerified(false)
+        toast.info('Service Role Key needed', {
+          description: 'Add Service Role Key to verify if tables exist or if RLS is blocking.',
+          duration: 10000
+        })
+        setErrorMessage(
+          `🔍 Verification Status\n\n` +
+          `⚠️ Cannot determine table status with Anon Key only.\n\n` +
+          `The error "${data.error}" can mean:\n` +
+          `• Tables don't exist, OR\n` +
+          `• Tables exist but RLS is blocking access\n\n` +
+          `💡 Solution: Add your Service Role Key in the "Service Role Key (Optional)" field above and click "Verify Tables Created" to get accurate status.\n\n` +
+          `Note: If Service Role Key is in .env.local, it will be used automatically server-side.`
+        )
+      } else if (data.needsTable) {
+        // Tables don't exist
+        setTablesVerified(false)
+        toast.error('Tables not found', {
+          description: 'Tables do not exist. Please create them using the SQL schema.',
+          duration: 15000
+        })
+        setErrorMessage(
+          `❌ Tables Not Found\n\n` +
+          `Verified with Service Role Key: Tables do not exist in your database.\n\n` +
+          `Please create the tables using the SQL schema provided.`
+        )
+      } else if (data.permissionIssue) {
+        // Permission issue
+        setTablesVerified(false)
+        toast.warning('Permission Issue Detected', {
+          description: data.message,
+          duration: 15000
+        })
+        setErrorMessage(
+          `🔒 Permission Issue Detected\n\n` +
+          `✅ Good news: Your tables exist in Supabase!\n` +
+          `❌ Problem: ${data.message}\n\n` +
+          `💡 Solution:\n` +
+          `1. Add your Service Role Key in the "Service Role Key (Optional)" field above\n` +
+          `2. Click "Verify Tables Created" again\n\n` +
+          `The Service Role Key bypasses RLS and allows setup to complete.`
+        )
+      } else {
+        // Unknown status
+        setTablesVerified(false)
+        console.log('Auto-verify result:', data)
+      }
+    } catch (error: any) {
+      console.error('Auto-verify error:', error)
+      // Don't show error toast for auto-verify failures - it's just a convenience feature
     }
   }
 
