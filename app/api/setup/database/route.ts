@@ -183,21 +183,84 @@ WITH CHECK (true);`,
                             tableCheckError?.message?.includes('schema'))
       
       if (isTableMissing) {
-        console.log('💡 Recommendation: Tables do not exist - need to create them')
-        return NextResponse.json({
-          needsTable: true,
-          sql: sql,
-          error: 'Database tables not found. Please create them first.',
-          instructions: 'Copy the SQL below and run it in Supabase SQL Editor',
-          sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
-          details: tableCheckError?.message || 'Tables not found',
-          diagnostic: {
-            tablesExist: false,
-            accessible: false,
-            reason: 'Tables do not exist',
-            solution: 'Run SQL schema'
+        console.log('💡 Tables do not exist - attempting automatic creation...')
+        
+        // Try to create tables automatically if we have database URL and service role key
+        if (serviceRoleKey && databaseUrl) {
+          try {
+            const createResult = await createTablesAutomatically(projectUrl, serviceRoleKey, projectId, sql, databaseUrl)
+            if (createResult.success) {
+              console.log('✅ Tables created automatically! Verifying...')
+              // Wait a moment for schema cache to refresh
+              await new Promise(resolve => setTimeout(resolve, 2000))
+              
+              // Verify tables were created by checking again
+              const { error: verifyError } = await supabase
+                .from('integration_configs')
+                .select('id')
+                .limit(1)
+              
+              if (!verifyError) {
+                console.log('✅ Tables verified after creation!')
+                // Continue with normal flow - tables now exist
+              } else {
+                return NextResponse.json({
+                  needsTable: true,
+                  sql: sql,
+                  error: 'Tables created but verification failed. Please verify manually.',
+                  instructions: 'Tables may have been created. Please check Supabase Table Editor and try again.',
+                  sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+                  details: verifyError.message,
+                  tablesMayExist: true
+                }, { status: 400 })
+              }
+            } else {
+              // Auto-create failed, return SQL
+              return NextResponse.json({
+                needsTable: true,
+                sql: sql,
+                error: 'Could not create tables automatically. Please create them manually.',
+                instructions: 'Copy the SQL below and run it in Supabase SQL Editor',
+                sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+                details: createResult.error || 'Unknown error',
+                autoCreateFailed: true
+              }, { status: 400 })
+            }
+          } catch (autoCreateError: any) {
+            return NextResponse.json({
+              needsTable: true,
+              sql: sql,
+              error: 'Could not create tables automatically. Please create them manually.',
+              instructions: 'Copy the SQL below and run it in Supabase SQL Editor',
+              sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+              details: autoCreateError.message || 'Unknown error',
+              autoCreateFailed: true
+            }, { status: 400 })
           }
-        }, { status: 400 })
+        } else {
+          // Missing required info for auto-creation
+          const missingItems = []
+          if (!serviceRoleKey) missingItems.push('Service Role Key')
+          if (!databaseUrl) missingItems.push('Database URL')
+          
+          return NextResponse.json({
+            needsTable: true,
+            sql: sql,
+            error: 'Database tables not found. Please create them first.',
+            instructions: `Copy the SQL below and run it in Supabase SQL Editor. Or add ${missingItems.join(' and ')} to enable automatic creation.`,
+            sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+            details: tableCheckError?.message || 'Tables not found',
+            needsServiceRoleKey: !serviceRoleKey,
+            needsDatabaseUrl: !databaseUrl,
+            canAutoCreate: false,
+            diagnostic: {
+              tablesExist: false,
+              accessible: false,
+              reason: 'Tables do not exist',
+              solution: 'Run SQL schema or provide Database URL + Service Role Key for auto-creation'
+            }
+          }, { status: 400 })
+        }
       }
       
       // Unknown error
