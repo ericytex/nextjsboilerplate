@@ -4,8 +4,11 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert"
 import { useState, useEffect, Suspense } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
+import { toast } from "sonner"
+import { AlertCircle, X } from "lucide-react"
 
 function SignupForm() {
   const router = useRouter()
@@ -17,6 +20,8 @@ function SignupForm() {
     password: ''
   })
   const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [showUserExistsAlert, setShowUserExistsAlert] = useState(false)
 
   // Pre-fill email from query params if redirected from signin
   useEffect(() => {
@@ -29,6 +34,8 @@ function SignupForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
+    setError(null)
+    setShowUserExistsAlert(false)
 
     try {
       const response = await fetch('/api/auth/signup', {
@@ -45,6 +52,10 @@ function SignupForm() {
 
       if (response.ok) {
         // Account created successfully
+        toast.success('Account created successfully!', {
+          description: 'Welcome! Redirecting to pricing...'
+        })
+        
         if (typeof window !== 'undefined') {
           localStorage.setItem('user_session', 'true')
           localStorage.setItem('user_id', data.user.id)
@@ -56,16 +67,33 @@ function SignupForm() {
       } else {
         // Handle specific error cases
         if (data.userExists) {
-          // User already exists - redirect to signin
-          alert('An account with this email already exists. Redirecting to sign in...')
-          router.push(`/signin?email=${encodeURIComponent(formData.email)}`)
+          // User already exists - show nice error message
+          setShowUserExistsAlert(true)
+          setError('An account with this email already exists.')
+          toast.error('Account already exists', {
+            description: 'This email is already registered. Would you like to sign in instead?',
+            action: {
+              label: 'Sign In',
+              onClick: () => router.push(`/signin?email=${encodeURIComponent(formData.email)}`)
+            },
+            duration: 5000
+          })
         } else {
-          alert(data.error || 'Signup failed. Please try again.')
+          // Other errors
+          const errorMessage = data.error || 'Signup failed. Please check your information and try again.'
+          setError(errorMessage)
+          toast.error('Signup failed', {
+            description: errorMessage
+          })
         }
       }
     } catch (error) {
       console.error('Signup error:', error)
-      alert('Signup failed. Please try again.')
+      const errorMessage = 'Unable to connect to the server. Please check your internet connection and try again.'
+      setError(errorMessage)
+      toast.error('Connection error', {
+        description: errorMessage
+      })
     } finally {
       setLoading(false)
     }
@@ -115,6 +143,62 @@ function SignupForm() {
               </div>
 
               <h1 className="text-4xl font-black text-gray-900 mb-8">Sign up for an account</h1>
+
+              {/* Error Alert for User Already Exists */}
+              {showUserExistsAlert && (
+                <Alert variant="destructive" className="mb-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Account Already Exists</AlertTitle>
+                  <AlertDescription className="mt-2">
+                    <p className="mb-3">An account with the email <strong>{formData.email}</strong> already exists.</p>
+                    <div className="flex items-center gap-2">
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setShowUserExistsAlert(false)
+                          setError(null)
+                          router.push(`/signin?email=${encodeURIComponent(formData.email)}`)
+                        }}
+                        className="h-8"
+                      >
+                        Sign In Instead
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => {
+                          setShowUserExistsAlert(false)
+                          setError(null)
+                        }}
+                        className="h-8"
+                      >
+                        Dismiss
+                      </Button>
+                    </div>
+                  </AlertDescription>
+                </Alert>
+              )}
+
+              {/* General Error Message */}
+              {error && !showUserExistsAlert && (
+                <Alert variant="destructive" className="mb-6">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertTitle>Signup Failed</AlertTitle>
+                  <AlertDescription className="flex items-center justify-between">
+                    <span>{error}</span>
+                    <button
+                      type="button"
+                      onClick={() => setError(null)}
+                      className="ml-2 text-destructive hover:text-destructive/80"
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </AlertDescription>
+                </Alert>
+              )}
 
               <form onSubmit={handleSubmit} className="space-y-6">
                 {/* Full Name */}
