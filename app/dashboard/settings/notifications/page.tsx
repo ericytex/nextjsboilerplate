@@ -1,16 +1,17 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
-import { Bell, Mail, Smartphone, MessageSquare, Save } from "lucide-react"
+import { Bell, Mail, Smartphone, MessageSquare, Save, Loader2 } from "lucide-react"
 import { toast } from "sonner"
 
 export default function NotificationsPage() {
   const [loading, setLoading] = useState(false)
+  const [loadingPreferences, setLoadingPreferences] = useState(true)
   const [notifications, setNotifications] = useState({
     email: {
       enabled: true,
@@ -37,13 +38,60 @@ export default function NotificationsPage() {
     }
   })
 
+  // Fetch notification preferences on mount
+  useEffect(() => {
+    const fetchPreferences = async () => {
+      try {
+        const userId = localStorage.getItem('user_id')
+        if (!userId) {
+          setLoadingPreferences(false)
+          return
+        }
+
+        const response = await fetch(`/api/user/notifications?userId=${userId}`)
+        const data = await response.json()
+
+        if (data.success && data.notifications) {
+          setNotifications(data.notifications)
+        }
+      } catch (error) {
+        console.error('Failed to fetch notification preferences:', error)
+      } finally {
+        setLoadingPreferences(false)
+      }
+    }
+
+    fetchPreferences()
+  }, [])
+
   const handleSave = async () => {
     setLoading(true)
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      toast.success('Notification preferences saved')
+      const userId = localStorage.getItem('user_id')
+      if (!userId) {
+        toast.error('Please sign in to save preferences')
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch('/api/user/notifications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          notifications
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success('Notification preferences saved')
+      } else {
+        toast.error(data.error || 'Failed to save preferences')
+      }
     } catch (error) {
+      console.error('Error saving preferences:', error)
       toast.error('Failed to save preferences')
     } finally {
       setLoading(false)
@@ -70,7 +118,13 @@ export default function NotificationsPage() {
           </p>
         </div>
 
-        <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
+        {loadingPreferences ? (
+          <div className="text-center py-8">
+            <Loader2 className="h-6 w-6 animate-spin mx-auto mb-2" />
+            <p className="text-muted-foreground">Loading preferences...</p>
+          </div>
+        ) : (
+          <form onSubmit={(e) => { e.preventDefault(); handleSave(); }}>
           <div className="grid gap-6">
             {/* Email Notifications */}
             <Card>
@@ -363,7 +417,8 @@ export default function NotificationsPage() {
               </Button>
             </div>
           </div>
-        </form>
+          </form>
+        )}
       </div>
     </div>
   )

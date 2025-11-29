@@ -53,12 +53,40 @@ export default function AuthenticationPage() {
       return
     }
 
+    if (authSettings.newPassword.length < 8) {
+      toast.error('Password must be at least 8 characters long')
+      setLoading(false)
+      return
+    }
+
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      toast.success('Password updated successfully')
-      setAuthSettings({ ...authSettings, password: '', newPassword: '', confirmPassword: '' })
+      const userId = localStorage.getItem('user_id')
+      if (!userId) {
+        toast.error('Please sign in to change your password')
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch('/api/user/password', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          currentPassword: authSettings.password,
+          newPassword: authSettings.newPassword
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success('Password updated successfully')
+        setAuthSettings({ ...authSettings, password: '', newPassword: '', confirmPassword: '' })
+      } else {
+        toast.error(data.error || 'Failed to update password')
+      }
     } catch (error) {
+      console.error('Error changing password:', error)
       toast.error('Failed to update password')
     } finally {
       setLoading(false)
