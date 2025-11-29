@@ -18,6 +18,13 @@ export async function POST(request: Request) {
       )
     }
 
+    // Log what we received (without exposing sensitive data)
+    console.log('📥 Received request:')
+    console.log('  - Project URL:', projectUrl)
+    console.log('  - Anon Key:', anonKey ? `${anonKey.substring(0, 20)}...` : 'NOT PROVIDED')
+    console.log('  - Service Role Key:', serviceRoleKey ? `${serviceRoleKey.substring(0, 20)}...` : 'NOT PROVIDED')
+    console.log('  - Database URL:', databaseUrl ? `${databaseUrl.substring(0, 30)}...` : 'NOT PROVIDED')
+
     // Use service role key if provided, otherwise use anon key
     // Service role key bypasses RLS, which is needed for setup
     const key = serviceRoleKey || anonKey
