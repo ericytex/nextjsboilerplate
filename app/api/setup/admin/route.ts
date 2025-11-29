@@ -1,9 +1,12 @@
 import { NextResponse } from 'next/server'
 import { createSupabaseClient } from '@/lib/supabase-client'
+import bcrypt from 'bcryptjs'
 
 /**
  * Create admin user and complete setup
  * POST /api/setup/admin
+ * 
+ * NOTE: This endpoint REQUIRES Service Role Key to bypass RLS policies
  */
 export async function POST(request: Request) {
   try {
@@ -25,16 +28,13 @@ export async function POST(request: Request) {
     }
 
     // Get Supabase credentials from environment or saved config
-    // Support both new (NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY) and old (NEXT_PUBLIC_SUPABASE_ANON_KEY) key names
+    // MUST use Service Role Key for admin creation (bypasses RLS)
     let supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
-    let supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY || 
-                      process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || 
-                      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    let serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
     // If not in env, try to get from saved integration config
-    if (!supabaseUrl || !supabaseKey) {
+    if (!supabaseUrl || !serviceRoleKey) {
       // Try to get from integration_configs if it exists
-      // First, we need at least the URL to connect
       if (!supabaseUrl) {
         return NextResponse.json(
           { error: 'Supabase not configured. Please set up database first in the setup page.' },
@@ -42,27 +42,49 @@ export async function POST(request: Request) {
         )
       }
       
-      // Try with anon key if we have URL
-      if (supabaseUrl && !supabaseKey) {
-        // We can't proceed without a key
-        return NextResponse.json(
-          { error: 'Supabase API key not found. Please complete database setup first.' },
-          { status: 400 }
-        )
+      // Try to get service role key from integration_configs
+      if (supabaseUrl && !serviceRoleKey) {
+        try {
+          // Try to read from integration_configs using anon key
+          const anonKey = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY || 
+                         process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+          if (anonKey) {
+            const tempSupabase = createSupabaseClient(supabaseUrl, anonKey)
+            const { data: config } = await tempSupabase
+              .from('integration_configs')
+              .select('config')
+              .eq('id', 'supabase')
+              .single()
+            
+            if (config?.config?.customSettings?.serviceRoleKey) {
+              serviceRoleKey = config.config.customSettings.serviceRoleKey
+            }
+          }
+        } catch (e) {
+          // Ignore errors, will check below
+        }
       }
     }
-
-    // Use service role key if available, otherwise anon key
-    const key = process.env.SUPABASE_SERVICE_ROLE_KEY || supabaseKey
     
-    if (!supabaseUrl || !key) {
+    if (!supabaseUrl) {
       return NextResponse.json(
-        { error: 'Supabase credentials incomplete. Please complete database setup first.' },
+        { error: 'Supabase URL not found. Please complete database setup first.' },
+        { status: 400 }
+      )
+    }
+    
+    if (!serviceRoleKey) {
+      return NextResponse.json(
+        { 
+          error: 'Service Role Key required for admin creation.',
+          details: 'Admin user creation requires Service Role Key to bypass RLS policies. Please add your Service Role Key in the database setup step.',
+          needsServiceRoleKey: true
+        },
         { status: 400 }
       )
     }
 
-    const supabase = createSupabaseClient(supabaseUrl, key)
+    const supabase = createSupabaseClient(supabaseUrl, serviceRoleKey)
 
     // Check if admin already exists
     const { data: existingAdmins, error: checkError } = await supabase
@@ -101,7 +123,6 @@ export async function POST(request: Request) {
     }
 
     // Hash password using bcrypt
-    const bcrypt = require('bcryptjs')
     const passwordHash = await bcrypt.hash(password, 10)
 
     // Create admin user
@@ -112,9 +133,7 @@ export async function POST(request: Request) {
         full_name: fullName,
         password_hash: passwordHash,
         role: 'admin',
-        email_verified: true,
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        email_verified: true
       })
       .select()
       .single()
@@ -122,46 +141,29 @@ export async function POST(request: Request) {
     if (createError) {
       console.error('Error creating admin user:', createError)
       return NextResponse.json(
-        { error: `Failed to create admin user: ${createError.message}` },
+        { 
+          error: `Failed to create admin user: ${createError.message}`,
+          details: createError.code === '42501' 
+            ? 'RLS policy violation. Service Role Key is required to bypass RLS.'
+            : createError.message,
+          needsServiceRoleKey: createError.code === '42501'
+        },
         { status: 500 }
       )
     }
 
-    // Create user settings
-    await supabase
+    // Create default settings for the admin user
+    const { error: settingsError } = await supabase
       .from('user_settings')
       .insert({
         user_id: newUser.id,
-        settings: {
-          notifications: {
-            email: true,
-            push: true,
-            inApp: true
-          },
-          theme: 'system',
-          language: 'en'
-        },
-        created_at: new Date().toISOString(),
-        updated_at: new Date().toISOString()
+        settings: {}
       })
 
-    // Create activity log
-    await supabase
-      .from('activity_logs')
-      .insert({
-        user_id: newUser.id,
-        action: 'admin_created',
-        resource_type: 'user',
-        resource_id: newUser.id,
-        metadata: {
-          setup: true,
-          role: 'admin'
-        },
-        created_at: new Date().toISOString()
-      })
-
-    // Mark setup as complete by creating a setup record (optional)
-    // Or we can just check for admin user existence
+    if (settingsError) {
+      console.error('Failed to create default settings for admin:', settingsError)
+      // Don't block setup, but log the error
+    }
 
     return NextResponse.json({
       success: true,
@@ -185,4 +187,3 @@ export async function POST(request: Request) {
     )
   }
 }
-
