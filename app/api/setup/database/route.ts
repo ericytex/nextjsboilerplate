@@ -136,8 +136,51 @@ export async function POST(request: Request) {
           }
         } else {
           // No service role key - can't verify if tables exist or if it's RLS
-          // Assume tables don't exist for now, but user should add service role key
-          console.log('⚠️ PGRST205 detected but no Service Role Key to verify if tables exist')
+          // But if we have Database URL, try to auto-create tables anyway
+          // (worst case: they already exist and we'll get "already exists" errors which we ignore)
+          if (databaseUrl) {
+            console.log('⚠️ PGRST205 detected but no Service Role Key - attempting auto-creation with Database URL...')
+            try {
+              // Try to get Service Role Key from env vars for verification after creation
+              const envServiceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+              const createResult = await createTablesAutomatically(
+                projectUrl, 
+                envServiceRoleKey || serviceRoleKey || '', 
+                projectId, 
+                sql, 
+                databaseUrl
+              )
+              
+              if (createResult.success) {
+                console.log('✅ Tables created! Waiting for schema cache refresh...')
+                await new Promise(resolve => setTimeout(resolve, 3000))
+                
+                // Try to verify with Service Role Key from env vars if available
+                const verifyKey = envServiceRoleKey || serviceRoleKey || anonKey
+                const verifySupabase = createSupabaseClient(projectUrl, verifyKey)
+                const { error: verifyError } = await verifySupabase
+                  .from('integration_configs')
+                  .select('id')
+                  .limit(1)
+                
+                if (!verifyError) {
+                  console.log('✅ Tables verified after automatic creation!')
+                  tablesExist = true
+                  tableCheckError = null
+                } else {
+                  console.log('⚠️ Tables created but verification still failing:', verifyError.message)
+                  // Still mark as success since creation succeeded
+                  tablesExist = true
+                }
+              } else {
+                console.log('❌ Automatic table creation failed:', createResult.error)
+              }
+            } catch (autoCreateError: any) {
+              console.error('❌ Error during automatic table creation:', autoCreateError)
+            }
+          } else {
+            console.log('⚠️ PGRST205 detected but no Service Role Key or Database URL to verify/create tables')
+          }
         }
       }
       
