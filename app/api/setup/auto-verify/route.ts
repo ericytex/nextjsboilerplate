@@ -1,6 +1,71 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 
+// Import the SQL schema function
+function getDatabaseSchema(): string {
+  // This should match the schema from database route
+  // For now, we'll import it or duplicate it - let's get it from the same source
+  return `-- Complete Database Schema
+-- Run this in Supabase SQL Editor (Dashboard → SQL Editor → New Query)
+
+-- Integration configurations table
+CREATE TABLE IF NOT EXISTS integration_configs (
+  id TEXT PRIMARY KEY,
+  config JSONB NOT NULL,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Users table
+CREATE TABLE IF NOT EXISTS users (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  email TEXT UNIQUE NOT NULL,
+  full_name TEXT,
+  password_hash TEXT,
+  role TEXT DEFAULT 'user' CHECK (role IN ('admin', 'user', 'moderator')),
+  avatar_url TEXT,
+  email_verified BOOLEAN DEFAULT false,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
+);
+
+-- Enable Row Level Security
+ALTER TABLE integration_configs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+
+-- Create indexes
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_role ON users(role);
+
+-- Create policies
+DROP POLICY IF EXISTS "Service role can manage integration configs" ON integration_configs;
+CREATE POLICY "Service role can manage integration configs" 
+ON integration_configs FOR ALL 
+USING (true) 
+WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Users can read own data" ON users;
+DROP POLICY IF EXISTS "Users can update own data" ON users;
+DROP POLICY IF EXISTS "Service role can manage users" ON users;
+
+CREATE POLICY "Users can read own data" 
+ON users FOR SELECT 
+USING (auth.uid() = id);
+
+CREATE POLICY "Users can update own data" 
+ON users FOR UPDATE 
+USING (auth.uid() = id);
+
+CREATE POLICY "Users can insert own data" 
+ON users FOR INSERT 
+WITH CHECK (auth.uid() = id);
+
+CREATE POLICY "Service role can manage users" 
+ON users FOR ALL 
+USING (true) 
+WITH CHECK (true);`;
+}
+
 /**
  * Auto-verify database connection and tables using env vars
  * This endpoint uses Service Role Key from env vars (if available) server-side
@@ -58,6 +123,9 @@ export async function POST(request: Request) {
                              configCheckError.message?.includes('RLS') ||
                              configCheckError.message?.includes('policy')
 
+    const sql = getDatabaseSchema()
+    const projectId = projectUrl.match(/https:\/\/([^.]+)\.supabase\.co/)?.[1] || 'your-project'
+
     if (isTableMissingError && serviceRoleKey) {
       // Tables truly don't exist (verified with Service Role Key)
       return NextResponse.json({
@@ -66,8 +134,11 @@ export async function POST(request: Request) {
         accessible: false,
         usedServiceRoleKey: true,
         needsTable: true,
-        message: 'Tables do not exist. Please create them using the SQL schema.',
-        error: configCheckError.message
+        message: 'Tables may not exist. Run the SQL schema in Supabase SQL Editor.',
+        error: configCheckError.message,
+        sql: sql,
+        sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+        instructions: 'Copy the SQL below and run it in Supabase SQL Editor to create the required tables.'
       })
     } else if (isTableMissingError && !serviceRoleKey) {
       // Can't determine if tables exist or RLS is blocking
@@ -77,9 +148,13 @@ export async function POST(request: Request) {
         accessible: false,
         usedServiceRoleKey: false,
         needsServiceRoleKey: true,
-        message: 'Cannot verify if tables exist. Add Service Role Key to verify.',
+        needsTable: true, // Assume tables may not exist
+        message: 'Tables may not exist. Run the SQL schema in Supabase SQL Editor.',
         error: configCheckError.message,
-        hint: 'PGRST205 can mean tables don\'t exist OR RLS is blocking. Service Role Key is needed to verify.'
+        sql: sql,
+        sqlEditorUrl: `https://app.supabase.com/project/${projectId}/sql/new`,
+        hint: 'PGRST205 can mean tables don\'t exist OR RLS is blocking. Service Role Key is needed to verify.',
+        instructions: 'Add Service Role Key to verify, or run the SQL below to create tables if they don\'t exist.'
       })
     } else if (isPermissionError) {
       // Permission issue - tables likely exist but RLS is blocking

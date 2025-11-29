@@ -440,7 +440,7 @@ WITH CHECK (true);`,
             return NextResponse.json({
               needsTable: true,
               sql: sql,
-              error: 'Database tables not found. ' + (hasDatabaseUrlInEnv ? 'Automatic creation attempted but failed.' : 'Please create them first.'),
+              error: 'Tables may not exist. Run the SQL schema in Supabase SQL Editor.',
               instructions: hasDatabaseUrlInEnv 
                 ? 'Automatic table creation was attempted using Database URL from .env.local but failed. Please check the error above or create tables manually using the SQL below.'
                 : `Copy the SQL below and run it in Supabase SQL Editor. Or add ${missingItems.join(' and ')} to enable automatic creation.`,
