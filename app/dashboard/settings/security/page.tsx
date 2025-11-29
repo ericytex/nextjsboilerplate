@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -22,26 +22,22 @@ import { toast } from "sonner"
 
 export default function SecurityPage() {
   const [loading, setLoading] = useState(false)
-  const [showApiKey, setShowApiKey] = useState(false)
+  const [showCreateForm, setShowCreateForm] = useState(false)
 
-  const [apiKeys, setApiKeys] = useState([
-    {
-      id: '1',
-      name: 'Production API Key',
-      key: 'sk_live_51H...',
-      lastUsed: '2024-01-15',
-      createdAt: '2023-12-01',
-      permissions: ['read', 'write']
-    },
-    {
-      id: '2',
-      name: 'Development API Key',
-      key: 'sk_test_42K...',
-      lastUsed: '2024-01-10',
-      createdAt: '2024-01-01',
-      permissions: ['read']
-    }
-  ])
+  const [apiKeys, setApiKeys] = useState<Array<{
+    id: string
+    name: string
+    key?: string
+    lastUsed: string
+    createdAt: string
+    permissions: string[]
+    expiresAt?: string | null
+    isExpired?: boolean
+  }>>([])
+  const [loadingKeys, setLoadingKeys] = useState(true)
+  const [newKeyName, setNewKeyName] = useState('')
+  const [newKeyPermissions, setNewKeyPermissions] = useState<string[]>(['read'])
+  const [newlyCreatedKey, setNewlyCreatedKey] = useState<{ key: string; name: string } | null>(null)
 
   const [activityLog] = useState([
     {
@@ -70,37 +66,116 @@ export default function SecurityPage() {
     }
   ])
 
+  // Fetch API keys on mount
+  useEffect(() => {
+    const fetchApiKeys = async () => {
+      try {
+        const userId = localStorage.getItem('user_id')
+        if (!userId) {
+          setLoadingKeys(false)
+          return
+        }
+
+        const response = await fetch(`/api/user/api-keys?userId=${userId}`)
+        const data = await response.json()
+
+        if (data.success && data.apiKeys) {
+          setApiKeys(data.apiKeys)
+        }
+      } catch (error) {
+        console.error('Failed to fetch API keys:', error)
+      } finally {
+        setLoadingKeys(false)
+      }
+    }
+
+    fetchApiKeys()
+  }, [])
+
   const handleCreateApiKey = async () => {
+    if (!newKeyName.trim()) {
+      toast.error('Please enter a name for the API key')
+      return
+    }
+
     setLoading(true)
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      const newKey = {
-        id: Date.now().toString(),
-        name: `API Key ${apiKeys.length + 1}`,
-        key: `sk_${Math.random().toString(36).substring(2, 15)}...`,
-        lastUsed: 'Never',
-        createdAt: new Date().toISOString().split('T')[0],
-        permissions: ['read', 'write']
+      const userId = localStorage.getItem('user_id')
+      if (!userId) {
+        toast.error('Please sign in to create an API key')
+        setLoading(false)
+        return
       }
-      setApiKeys([...apiKeys, newKey])
-      toast.success('API key created successfully')
+
+      const response = await fetch('/api/user/api-keys', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          name: newKeyName.trim(),
+          permissions: newKeyPermissions
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.apiKey) {
+        setNewlyCreatedKey({ key: data.apiKey, name: data.keyInfo.name })
+        setNewKeyName('')
+        setNewKeyPermissions(['read'])
+        setShowCreateForm(false)
+        // Refresh API keys list
+        const keysResponse = await fetch(`/api/user/api-keys?userId=${userId}`)
+        const keysData = await keysResponse.json()
+        if (keysData.success && keysData.apiKeys) {
+          setApiKeys(keysData.apiKeys)
+        }
+      } else {
+        toast.error(data.error || 'Failed to create API key')
+      }
     } catch (error) {
+      console.error('Error creating API key:', error)
       toast.error('Failed to create API key')
     } finally {
       setLoading(false)
     }
   }
 
-  const handleDeleteApiKey = (id: string) => {
+  const handleDeleteApiKey = async (id: string) => {
     if (!confirm('Are you sure you want to delete this API key? This action cannot be undone.')) {
       return
     }
-    setApiKeys(apiKeys.filter(key => key.id !== id))
-    toast.success('API key deleted')
+
+    try {
+      const userId = localStorage.getItem('user_id')
+      if (!userId) {
+        toast.error('Please sign in to delete an API key')
+        return
+      }
+
+      const response = await fetch(`/api/user/api-keys?userId=${userId}&keyId=${id}`, {
+        method: 'DELETE'
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        setApiKeys(apiKeys.filter(key => key.id !== id))
+        toast.success('API key deleted')
+      } else {
+        toast.error(data.error || 'Failed to delete API key')
+      }
+    } catch (error) {
+      console.error('Error deleting API key:', error)
+      toast.error('Failed to delete API key')
+    }
   }
 
-  const handleCopyApiKey = (key: string) => {
+  const handleCopyApiKey = (key?: string) => {
+    if (!key) {
+      toast.error('API key not available')
+      return
+    }
     navigator.clipboard.writeText(key)
     toast.success('API key copied to clipboard')
   }
@@ -129,62 +204,141 @@ export default function SecurityPage() {
                     Manage your API keys for programmatic access
                   </CardDescription>
                 </div>
-                <Button onClick={handleCreateApiKey} disabled={loading}>
+                <Button onClick={() => setShowCreateForm(true)} disabled={loading}>
                   <Key className="h-4 w-4 mr-2" />
                   Create API Key
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {apiKeys.map((apiKey) => (
-                  <div
-                    key={apiKey.id}
-                    className="p-4 border rounded-lg space-y-3"
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">{apiKey.name}</p>
-                          <Badge variant="outline" className="text-xs">
-                            {apiKey.permissions.join(', ')}
-                          </Badge>
+              {loadingKeys ? (
+                <div className="text-center py-8 text-muted-foreground">Loading API keys...</div>
+              ) : apiKeys.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <p className="mb-2">No API keys yet</p>
+                  <Button variant="outline" size="sm" onClick={() => setShowCreateForm(true)}>
+                    Create your first API key
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {apiKeys.map((apiKey) => (
+                    <div
+                      key={apiKey.id}
+                      className="p-4 border rounded-lg space-y-3"
+                    >
+                      <div className="flex items-start justify-between">
+                        <div className="space-y-1 flex-1">
+                          <div className="flex items-center gap-2">
+                            <p className="font-medium">{apiKey.name}</p>
+                            <Badge variant="outline" className="text-xs">
+                              {apiKey.permissions.join(', ')}
+                            </Badge>
+                            {apiKey.isExpired && (
+                              <Badge variant="destructive" className="text-xs">Expired</Badge>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <code className="text-sm bg-muted px-2 py-1 rounded">
+                              sk_••••••••••••••••••••••••••••••••
+                            </code>
+                            <p className="text-xs text-muted-foreground">Key hidden for security</p>
+                          </div>
+                          <div className="flex gap-4 text-xs text-muted-foreground">
+                            <span>Created: {new Date(apiKey.createdAt).toLocaleDateString()}</span>
+                            <span>Last used: {apiKey.lastUsed}</span>
+                            {apiKey.expiresAt && (
+                              <span>Expires: {new Date(apiKey.expiresAt).toLocaleDateString()}</span>
+                            )}
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <code className="text-sm bg-muted px-2 py-1 rounded">
-                            {showApiKey ? apiKey.key : '••••••••••••••••'}
-                          </code>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setShowApiKey(!showApiKey)}
-                          >
-                            {showApiKey ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleCopyApiKey(apiKey.key)}
-                          >
-                            <Copy className="h-4 w-4" />
-                          </Button>
-                        </div>
-                        <div className="flex gap-4 text-xs text-muted-foreground">
-                          <span>Created: {new Date(apiKey.createdAt).toLocaleDateString()}</span>
-                          <span>Last used: {apiKey.lastUsed === 'Never' ? 'Never' : new Date(apiKey.lastUsed).toLocaleDateString()}</span>
-                        </div>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handleDeleteApiKey(apiKey.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeleteApiKey(apiKey.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
                     </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Create API Key Form */}
+              {showCreateForm && (
+                <div className="mt-6 p-4 border rounded-lg space-y-4 bg-muted/50">
+                  <div>
+                    <Label htmlFor="keyName">API Key Name</Label>
+                    <Input
+                      id="keyName"
+                      value={newKeyName}
+                      onChange={(e) => setNewKeyName(e.target.value)}
+                      placeholder="e.g., Production API Key"
+                      className="mt-2"
+                    />
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Give your API key a descriptive name to identify it later
+                    </p>
                   </div>
-                ))}
-              </div>
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={handleCreateApiKey}
+                      disabled={loading || !newKeyName.trim()}
+                    >
+                      {loading ? 'Creating...' : 'Create API Key'}
+                    </Button>
+                    <Button
+                      variant="outline"
+                      onClick={() => {
+                        setShowCreateForm(false)
+                        setNewKeyName('')
+                      }}
+                    >
+                      Cancel
+                    </Button>
+                  </div>
+                </div>
+              )}
+
+              {/* Show newly created key */}
+              {newlyCreatedKey && (
+                <div className="mt-6 p-4 border-2 border-amber-500 rounded-lg bg-amber-50 dark:bg-amber-900/20 space-y-3">
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <p className="font-semibold text-amber-900 dark:text-amber-100 mb-2">
+                        ⚠️ Save this API key now!
+                      </p>
+                      <p className="text-sm text-amber-800 dark:text-amber-200 mb-3">
+                        This is the only time you'll be able to see this key. Make sure to copy it and store it securely.
+                      </p>
+                      <div className="flex items-center gap-2">
+                        <code className="text-sm bg-white dark:bg-gray-800 px-3 py-2 rounded border flex-1 font-mono break-all">
+                          {newlyCreatedKey.key}
+                        </code>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleCopyApiKey(newlyCreatedKey.key)}
+                        >
+                          <Copy className="h-4 w-4 mr-2" />
+                          Copy
+                        </Button>
+                      </div>
+                      <p className="text-xs text-amber-700 dark:text-amber-300 mt-2">
+                        Key name: {newlyCreatedKey.name}
+                      </p>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setNewlyCreatedKey(null)}
+                    >
+                      ×
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
 

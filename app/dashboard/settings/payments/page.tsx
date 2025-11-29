@@ -164,10 +164,37 @@ function PaymentsContent() {
 
     setLoading(true)
     try {
-      // TODO: Replace with actual API call
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      toast.success('Subscription will be cancelled at the end of the billing period')
+      const userId = localStorage.getItem('user_id')
+      if (!userId) {
+        toast.error('Please sign in to cancel your subscription')
+        setLoading(false)
+        return
+      }
+
+      const response = await fetch('/api/user/subscription/cancel', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          cancelImmediately: false
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success) {
+        toast.success(data.message || 'Subscription will be cancelled at the end of the billing period')
+        // Refresh subscription data
+        const subResponse = await fetch(`/api/user/subscription?userId=${userId}`)
+        const subData = await subResponse.json()
+        if (subData.success && subData.subscription) {
+          setSubscription(subData.subscription)
+        }
+      } else {
+        toast.error(data.error || 'Failed to cancel subscription')
+      }
     } catch (error) {
+      console.error('Error cancelling subscription:', error)
       toast.error('Failed to cancel subscription')
     } finally {
       setLoading(false)
