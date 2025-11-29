@@ -240,8 +240,8 @@ export async function POST(request: NextRequest) {
     await logActivity(supabaseUrl, serviceRoleKey, {
       action: 'subscription.trial_upgrade.batch',
       resource_type: 'subscription',
-      resource_id: null,
-      user_id: null,
+      resource_id: undefined,
+      user_id: undefined,
       ip_address: requestInfo.ip_address,
       user_agent: requestInfo.user_agent,
       metadata: {
