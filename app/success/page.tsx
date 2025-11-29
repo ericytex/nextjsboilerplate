@@ -10,6 +10,7 @@ function SuccessContent() {
   const plan = searchParams.get('plan') || 'unknown'
   const trial = searchParams.get('trial') === 'true'
   const isBasicPlan = plan === 'basic'
+  const isFreePlan = plan === 'free'
 
   // Set session flag when payment is successful
   useEffect(() => {
@@ -18,6 +19,28 @@ function SuccessContent() {
       localStorage.setItem('has_visited_dashboard', 'true')
     }
   }, [])
+
+  // Track free plan signup
+  useEffect(() => {
+    if (isFreePlan && typeof window !== 'undefined') {
+      const userId = localStorage.getItem('user_id')
+      const userEmail = localStorage.getItem('user_email')
+      
+      // Track free plan signup
+      fetch('/api/track-free-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId,
+          email: userEmail,
+          plan: 'free'
+        })
+      }).catch(error => {
+        console.error('Failed to track free plan signup:', error)
+        // Don't show error to user - tracking is non-critical
+      })
+    }
+  }, [isFreePlan])
 
   // Automatically redirect to dashboard after 3 seconds
   useEffect(() => {
@@ -32,12 +55,22 @@ function SuccessContent() {
     <main className="min-h-screen p-8 flex items-center justify-center">
       <div className="max-w-md mx-auto text-center">
         <h1 className="text-4xl font-bold mb-4 text-green-600">
-          {trial && isBasicPlan ? 'Free Trial Started!' : 'Payment Successful'}
+          {isFreePlan ? 'Welcome!' : trial && isBasicPlan ? 'Free Trial Started!' : 'Payment Successful'}
         </h1>
         <p className="text-lg text-gray-600 mb-2">
           Plan: <span className="font-semibold capitalize">{plan}</span>
         </p>
-        {trial && isBasicPlan && (
+        {isFreePlan && (
+          <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
+            <p className="text-green-800 font-semibold mb-2">
+              🎉 Your Free Plan is Active!
+            </p>
+            <p className="text-sm text-green-700">
+              Your free plan is active. We're covering the cost for you! Enjoy full access to all free plan features.
+            </p>
+          </div>
+        )}
+        {trial && isBasicPlan && !isFreePlan && (
           <div className="bg-green-50 border-2 border-green-200 rounded-lg p-4 mb-4">
             <p className="text-green-800 font-semibold mb-2">
               🎉 Your 14-Day Free Trial is Active!
