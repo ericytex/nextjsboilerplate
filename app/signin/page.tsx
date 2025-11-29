@@ -20,7 +20,6 @@ function SigninForm() {
   })
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [showUserNotFoundAlert, setShowUserNotFoundAlert] = useState(false)
 
   // Pre-fill email from query params if redirected from signup
   useEffect(() => {
@@ -34,7 +33,6 @@ function SigninForm() {
     e.preventDefault()
     setLoading(true)
     setError(null)
-    setShowUserNotFoundAlert(false)
 
     try {
       const response = await fetch('/api/auth/signin', {
@@ -65,27 +63,13 @@ function SigninForm() {
         // Redirect to dashboard after login
         router.push('/dashboard')
       } else {
-        // Handle specific error cases
-        if (data.userNotFound) {
-          // User doesn't exist - show nice error message
-          setShowUserNotFoundAlert(true)
-          setError('No account found with this email address.')
-          toast.error('Account not found', {
-            description: 'No account exists with this email. Would you like to sign up instead?',
-            action: {
-              label: 'Sign Up',
-              onClick: () => router.push(`/signup?email=${encodeURIComponent(formData.email)}`)
-            },
-            duration: 5000
-          })
-        } else {
-          // Other errors (wrong password, etc.)
-          const errorMessage = data.error || 'Sign in failed. Please check your credentials and try again.'
-          setError(errorMessage)
-          toast.error('Sign in failed', {
-            description: errorMessage
-          })
-        }
+        // Security: Show generic error message to prevent email enumeration
+        // Don't reveal whether user exists or password is wrong
+        const errorMessage = data.error || 'Invalid email or password'
+        setError(errorMessage)
+        toast.error('Sign in failed', {
+          description: errorMessage
+        })
       }
     } catch (error) {
       console.error('Signin error:', error)
@@ -146,51 +130,25 @@ function SigninForm() {
 
               <h1 className="text-4xl font-black text-gray-900 mb-8">Sign in to your account</h1>
 
-              {/* Error Alert for User Not Found */}
-              {showUserNotFoundAlert && (
+              {/* Error Message - Generic to prevent email enumeration */}
+              {error && (
                 <Alert variant="destructive" className="mb-6">
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Account Not Found</AlertTitle>
-                  <AlertDescription className="mt-2">
-                    <p className="mb-3">No account exists with the email <strong>{formData.email}</strong>.</p>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setShowUserNotFoundAlert(false)
-                          setError(null)
-                          router.push(`/signup?email=${encodeURIComponent(formData.email)}`)
-                        }}
-                        className="h-8"
-                      >
-                        Create Account
-                      </Button>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => {
-                          setShowUserNotFoundAlert(false)
-                          setError(null)
-                        }}
-                        className="h-8"
-                      >
-                        Dismiss
-                      </Button>
-                    </div>
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* General Error Message */}
-              {error && !showUserNotFoundAlert && (
-                <Alert variant="destructive" className="mb-6">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>Sign In Failed</AlertTitle>
+                  <AlertTitle>Unable to Sign In</AlertTitle>
                   <AlertDescription className="flex items-center justify-between">
-                    <span>{error}</span>
+                    <div className="flex-1">
+                      <p className="mb-2">{error}</p>
+                      <p className="text-sm text-muted-foreground">
+                        Please check your email and password, or{' '}
+                        <Link 
+                          href={`/signup?email=${encodeURIComponent(formData.email)}`}
+                          className="font-semibold underline hover:no-underline"
+                        >
+                          create an account
+                        </Link>
+                        {' '}if you don't have one.
+                      </p>
+                    </div>
                     <button
                       type="button"
                       onClick={() => setError(null)}

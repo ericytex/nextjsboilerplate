@@ -62,11 +62,12 @@ export async function POST(request: Request) {
     }
 
     if (existingUser) {
+      // Security: For signup, it's okay to reveal that email exists
+      // since the user is trying to create an account, not enumerate emails
       return NextResponse.json(
         { 
-          error: 'User with this email already exists',
-          userExists: true,
-          message: 'An account with this email already exists. Please sign in instead.'
+          error: 'An account with this email already exists. Please sign in instead.',
+          userExists: true
         },
         { status: 409 } // Conflict status code
       )

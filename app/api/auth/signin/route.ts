@@ -54,21 +54,21 @@ export async function POST(request: Request) {
       )
     }
 
+    // Security: Always return the same generic error message
+    // to prevent email enumeration attacks
+    const genericError = 'Invalid email or password'
+
     if (!user) {
       return NextResponse.json(
-        { 
-          error: 'Invalid email or password',
-          userNotFound: true,
-          message: 'No account found with this email. Please sign up first.'
-        },
+        { error: genericError },
         { status: 401 }
       )
     }
 
     if (!user.password_hash) {
       return NextResponse.json(
-        { error: 'Account setup incomplete. Please contact support.' },
-        { status: 500 }
+        { error: genericError },
+        { status: 401 }
       )
     }
 
@@ -77,7 +77,7 @@ export async function POST(request: Request) {
 
     if (!passwordValid) {
       return NextResponse.json(
-        { error: 'Invalid email or password' },
+        { error: genericError },
         { status: 401 }
       )
     }
