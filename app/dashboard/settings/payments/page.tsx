@@ -1,6 +1,7 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect, Suspense } from 'react'
+import { useSearchParams } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -15,12 +16,17 @@ import {
   Calendar,
   Download,
   Receipt,
-  AlertCircle
+  AlertCircle,
+  Edit,
+  Loader2
 } from "lucide-react"
 import { toast } from "sonner"
 
-export default function PaymentsPage() {
+function PaymentsContent() {
   const [loading, setLoading] = useState(false)
+  const [updatingCard, setUpdatingCard] = useState(false)
+  const [subscription, setSubscription] = useState<any>(null)
+  const searchParams = useSearchParams()
 
   const [paymentMethods, setPaymentMethods] = useState([
     {
@@ -43,14 +49,33 @@ export default function PaymentsPage() {
     }
   ])
 
-  const [subscription] = useState({
-    plan: 'Pro',
-    status: 'active',
-    billingCycle: 'monthly',
-    amount: '$40',
-    nextBillingDate: '2024-02-15',
-    cancelAtPeriodEnd: false
-  })
+  // Fetch user subscription on mount
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const userId = localStorage.getItem('user_id')
+        if (!userId) return
+
+        const response = await fetch(`/api/user/subscription?userId=${userId}`)
+        const data = await response.json()
+
+        if (data.success && data.subscription) {
+          setSubscription(data.subscription)
+        }
+      } catch (error) {
+        console.error('Failed to fetch subscription:', error)
+      }
+    }
+
+    fetchSubscription()
+
+    // Check if redirected from payment update
+    if (searchParams?.get('updated') === 'true') {
+      toast.success('Payment method updated successfully!')
+      // Remove query param
+      window.history.replaceState({}, '', '/dashboard/settings/payments')
+    }
+  }, [searchParams])
 
   const [invoices] = useState([
     {
@@ -76,9 +101,43 @@ export default function PaymentsPage() {
     }
   ])
 
+  const handleUpdateCard = async () => {
+    const userId = localStorage.getItem('user_id')
+    if (!userId) {
+      toast.error('Please sign in to update your payment method')
+      return
+    }
+
+    setUpdatingCard(true)
+    try {
+      const response = await fetch('/api/payment-methods/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: userId,
+          subscriptionId: subscription?.id
+        })
+      })
+
+      const data = await response.json()
+
+      if (data.success && data.checkoutUrl) {
+        // Redirect to Creem.io checkout to update payment method
+        window.location.href = data.checkoutUrl
+      } else {
+        toast.error(data.error || 'Failed to create checkout session')
+      }
+    } catch (error) {
+      console.error('Error updating card:', error)
+      toast.error('Failed to update payment method')
+    } finally {
+      setUpdatingCard(false)
+    }
+  }
+
   const handleAddPaymentMethod = () => {
-    // TODO: Integrate with Stripe or payment provider
-    toast.info('Redirecting to add payment method...')
+    // For now, same as update - redirects to checkout
+    handleUpdateCard()
   }
 
   const handleSetDefault = (id: string) => {
@@ -222,58 +281,127 @@ export default function PaymentsPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {paymentMethods.map((method) => (
-                  <div
-                    key={method.id}
-                    className="flex items-center justify-between p-4 border rounded-lg"
-                  >
-                    <div className="flex items-center gap-4">
-                      <div className="p-2 bg-muted rounded">
-                        <CreditCard className="h-5 w-5" />
-                      </div>
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-medium">
-                            {method.brand} •••• {method.last4}
-                          </p>
-                          {method.isDefault && (
-                            <Badge variant="outline" className="text-xs">Default</Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          Expires {method.expiryMonth}/{method.expiryYear}
-                        </p>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {!method.isDefault && (
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleSetDefault(method.id)}
+                {subscription && subscription.status === 'active' ? (
+                  <>
+                    {/* Show current payment method info if available */}
+                    {paymentMethods.length > 0 ? (
+                      paymentMethods.map((method) => (
+                        <div
+                          key={method.id}
+                          className="flex items-center justify-between p-4 border rounded-lg"
                         >
-                          Set as Default
+                          <div className="flex items-center gap-4">
+                            <div className="p-2 bg-muted rounded">
+                              <CreditCard className="h-5 w-5" />
+                            </div>
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-medium">
+                                  {method.brand} •••• {method.last4}
+                                </p>
+                                {method.isDefault && (
+                                  <Badge variant="outline" className="text-xs">Default</Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-muted-foreground">
+                                Expires {method.expiryMonth}/{method.expiryYear}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={handleUpdateCard}
+                              disabled={updatingCard}
+                            >
+                              {updatingCard ? (
+                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              ) : (
+                                <Edit className="h-4 w-4 mr-2" />
+                              )}
+                              Update Card
+                            </Button>
+                            {!method.isDefault && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => handleSetDefault(method.id)}
+                              >
+                                Set as Default
+                              </Button>
+                            )}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeletePaymentMethod(method.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))
+                    ) : (
+                      <div className="p-4 border rounded-lg text-center">
+                        <CreditCard className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                        <p className="text-sm text-muted-foreground mb-4">
+                          No payment method on file
+                        </p>
+                        <Button
+                          variant="outline"
+                          onClick={handleUpdateCard}
+                          disabled={updatingCard}
+                        >
+                          {updatingCard ? (
+                            <>
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                              Loading...
+                            </>
+                          ) : (
+                            <>
+                              <Plus className="h-4 w-4 mr-2" />
+                              Add Payment Method
+                            </>
+                          )}
                         </Button>
-                      )}
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => handleDeletePaymentMethod(method.id)}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
+                      </div>
+                    )}
 
-                <Button
-                  variant="outline"
-                  className="w-full"
-                  onClick={handleAddPaymentMethod}
-                >
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Payment Method
-                </Button>
+                    {/* Update Card Button */}
+                    {paymentMethods.length > 0 && (
+                      <Button
+                        variant="outline"
+                        className="w-full"
+                        onClick={handleUpdateCard}
+                        disabled={updatingCard}
+                      >
+                        {updatingCard ? (
+                          <>
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            Redirecting...
+                          </>
+                        ) : (
+                          <>
+                            <Edit className="h-4 w-4 mr-2" />
+                            Update Payment Method
+                          </>
+                        )}
+                      </Button>
+                    )}
+                  </>
+                ) : (
+                  <div className="p-4 border rounded-lg text-center">
+                    <CreditCard className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                    <p className="text-sm text-muted-foreground mb-4">
+                      {subscription ? 'No active subscription' : 'Loading subscription...'}
+                    </p>
+                    {!subscription && (
+                      <Button variant="outline" asChild>
+                        <a href="/pricing">View Plans</a>
+                      </Button>
+                    )}
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
@@ -328,6 +456,23 @@ export default function PaymentsPage() {
         </div>
       </div>
     </div>
+  )
+}
+
+export default function PaymentsPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex flex-1 flex-col gap-4 py-4 md:gap-6 md:py-6">
+        <div className="px-4 lg:px-6">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold">Payment Settings</h1>
+            <p className="text-muted-foreground mt-2">Loading...</p>
+          </div>
+        </div>
+      </div>
+    }>
+      <PaymentsContent />
+    </Suspense>
   )
 }
 
