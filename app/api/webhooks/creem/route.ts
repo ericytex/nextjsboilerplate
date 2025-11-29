@@ -9,7 +9,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import type { WebhookEvent, WebhookEventType } from '@/types/creem'
 import { logActivity, extractRequestInfo } from '@/lib/activity-logger'
 import { createSupabaseClient } from '@/lib/supabase-client'
-import crypto from 'crypto'
+import * as crypto from 'crypto'
 
 /**
  * Verify webhook signature using HMAC-SHA256
