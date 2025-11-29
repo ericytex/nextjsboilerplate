@@ -65,14 +65,14 @@ export default function SetupPage() {
           const newConfig = {
             projectUrl: data.supabaseUrl || '',
             anonKey: data.anonKey || '',
-            serviceRoleKey: '', // Don't pre-fill service role key for security
-            databaseUrl: '' // Don't pre-fill database URL for security
+            serviceRoleKey: '', // Don't pre-fill service role key for security (but will be used server-side)
+            databaseUrl: '' // Don't pre-fill database URL for security (but will be used server-side if in env)
           }
           
           setDatabaseConfig(newConfig)
           
           toast.info('Environment variables loaded', {
-            description: 'Found Supabase credentials in .env.local. Testing connection automatically...'
+            description: 'Found Supabase credentials in .env.local. Testing connection and verifying tables automatically...'
           })
           
           // Auto-test connection if we have both URL and key
@@ -181,6 +181,11 @@ export default function SetupPage() {
         toast.success('✅ Tables verified!', {
           description: data.message
         })
+        // Auto-click Continue after a short delay
+        setTimeout(() => {
+          console.log('🚀 Auto-proceeding to save database config...')
+          saveDatabaseConfig()
+        }, 1500)
       } else if (data.needsServiceRoleKey) {
         // Can't verify without Service Role Key
         setTablesVerified(false)
@@ -198,33 +203,30 @@ export default function SetupPage() {
           `Note: If Service Role Key is in .env.local, it will be used automatically server-side.`
         )
       } else if (data.needsTable) {
-        // Tables don't exist
+        // Tables don't exist - try to auto-create them
         setTablesVerified(false)
-        toast.error('Tables not found', {
-          description: 'Tables do not exist. Please create them using the SQL schema.',
-          duration: 15000
+        toast.info('Tables not found - attempting automatic creation...', {
+          description: 'Trying to create tables automatically using Database URL from env vars.',
+          duration: 10000
         })
-        setErrorMessage(
-          `❌ Tables Not Found\n\n` +
-          `Verified with Service Role Key: Tables do not exist in your database.\n\n` +
-          `Please create the tables using the SQL schema provided.`
-        )
+        
+        // Try to auto-create tables using Database URL from env vars
+        setTimeout(() => {
+          autoCreateTables(config)
+        }, 1000)
       } else if (data.permissionIssue) {
-        // Permission issue
+        // Permission issue - try to verify with Service Role Key from env vars
         setTablesVerified(false)
         toast.warning('Permission Issue Detected', {
-          description: data.message,
+          description: 'Tables exist but RLS is blocking. Attempting to verify with Service Role Key...',
           duration: 15000
         })
-        setErrorMessage(
-          `🔒 Permission Issue Detected\n\n` +
-          `✅ Good news: Your tables exist in Supabase!\n` +
-          `❌ Problem: ${data.message}\n\n` +
-          `💡 Solution:\n` +
-          `1. Add your Service Role Key in the "Service Role Key (Optional)" field above\n` +
-          `2. Click "Verify Tables Created" again\n\n` +
-          `The Service Role Key bypasses RLS and allows setup to complete.`
-        )
+        
+        // Try to verify tables using the full verification flow (which uses Service Role Key from env vars)
+        setTimeout(() => {
+          console.log('🔄 Attempting to verify tables with Service Role Key from env vars...')
+          verifyTablesWithConfig(config)
+        }, 1000)
       } else {
         // Unknown status
         setTablesVerified(false)
@@ -233,6 +235,98 @@ export default function SetupPage() {
     } catch (error: any) {
       console.error('Auto-verify error:', error)
       // Don't show error toast for auto-verify failures - it's just a convenience feature
+    }
+  }
+
+  // Auto-create tables if they're missing (using Database URL from env vars)
+  const autoCreateTables = async (config: typeof databaseConfig) => {
+    const projectUrl = config.projectUrl?.trim()
+    const anonKey = config.anonKey?.trim()
+    
+    if (!projectUrl || !anonKey) {
+      return
+    }
+
+    setVerifyingTables(true)
+    setTablesVerified(false)
+    setErrorMessage('')
+
+    try {
+      toast.info('Creating tables automatically...', {
+        description: 'Using Database URL from .env.local to create tables.',
+        duration: 15000
+      })
+
+      // Call the database endpoint which will auto-create tables if Database URL is in env vars
+      const response = await fetch('/api/setup/database', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          projectUrl: projectUrl,
+          anonKey: anonKey,
+          serviceRoleKey: config.serviceRoleKey?.trim() || '', // Will use from env vars server-side if available
+          databaseUrl: config.databaseUrl?.trim() || '' // Will use from env vars server-side if available
+        })
+      })
+
+      const data = await response.json()
+
+      if (response.ok && !data.needsTable && !data.permissionIssue) {
+        // Tables created and verified!
+        setTablesVerified(true)
+        setConnectionStatus('success')
+        setErrorMessage('')
+        toast.success('✅ Tables created and verified!', {
+          description: 'Tables were automatically created and are now accessible.'
+        })
+        // Auto-click Continue after a short delay
+        setTimeout(() => {
+          console.log('🚀 Auto-proceeding to save database config...')
+          saveDatabaseConfig()
+        }, 2000)
+      } else if (data.needsTable) {
+        // Still need tables - Database URL might not be in env vars
+        setTablesVerified(false)
+        toast.warning('Automatic creation failed', {
+          description: 'Add Database URL in the form or .env.local to enable automatic table creation.',
+          duration: 15000
+        })
+        setErrorMessage(
+          `❌ Tables Not Found\n\n` +
+          `Automatic table creation requires Database URL.\n\n` +
+          `Please either:\n` +
+          `1. Add Database URL in the "Database URL (Optional)" field above, OR\n` +
+          `2. Add DATABASE_URL to your .env.local file\n\n` +
+          `Then click "Verify Tables Created" to create tables automatically.`
+        )
+      } else if (data.permissionIssue) {
+        // Permission issue
+        setTablesVerified(false)
+        toast.warning('Permission Issue Detected', {
+          description: data.message || 'Tables may exist but RLS is blocking access.',
+          duration: 15000
+        })
+        setErrorMessage(
+          `🔒 Permission Issue Detected\n\n` +
+          `✅ Good news: Your tables exist in Supabase!\n` +
+          `❌ Problem: ${data.message || 'RLS is blocking access'}\n\n` +
+          `💡 Solution:\n` +
+          `1. Add your Service Role Key in the "Service Role Key (Optional)" field above\n` +
+          `2. Click "Verify Tables Created" again\n\n` +
+          `The Service Role Key bypasses RLS and allows setup to complete.`
+        )
+      } else {
+        throw new Error(data.error || 'Failed to create tables')
+      }
+    } catch (error: any) {
+      setTablesVerified(false)
+      toast.error('Failed to create tables automatically', {
+        description: error.message || 'Please create tables manually using the SQL schema.',
+        duration: 15000
+      })
+      setErrorMessage(error.message || 'Failed to create tables automatically')
+    } finally {
+      setVerifyingTables(false)
     }
   }
 
@@ -288,6 +382,11 @@ export default function SetupPage() {
         toast.success('✅ Tables verified! All database tables are accessible.')
         setConnectionStatus('success')
         setErrorMessage('')
+        // Auto-click Continue after a short delay
+        setTimeout(() => {
+          console.log('🚀 Auto-proceeding to save database config...')
+          saveDatabaseConfig()
+        }, 1500)
       } else if (data.policyIssue || (data.permissionIssue || data.needsServiceRoleKey)) {
         // Permission error or policy issue - need service role key
         setTablesVerified(false)

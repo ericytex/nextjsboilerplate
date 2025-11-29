@@ -9,7 +9,7 @@ import { Client } from 'pg'
 export async function POST(request: Request) {
   try {
     const body = await request.json()
-    const { projectUrl, anonKey, serviceRoleKey, databaseUrl } = body
+    let { projectUrl, anonKey, serviceRoleKey, databaseUrl } = body
 
     if (!projectUrl || !anonKey) {
       return NextResponse.json(
@@ -18,12 +18,21 @@ export async function POST(request: Request) {
       )
     }
 
+    // Use Service Role Key and Database URL from env vars if not provided in request
+    // This allows auto-creation to work even if user hasn't filled in the form
+    if (!serviceRoleKey) {
+      serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    }
+    if (!databaseUrl) {
+      databaseUrl = process.env.DATABASE_URL || ''
+    }
+
     // Log what we received (without exposing sensitive data)
     console.log('📥 Received request:')
     console.log('  - Project URL:', projectUrl)
     console.log('  - Anon Key:', anonKey ? `${anonKey.substring(0, 20)}...` : 'NOT PROVIDED')
-    console.log('  - Service Role Key:', serviceRoleKey ? `${serviceRoleKey.substring(0, 20)}...` : 'NOT PROVIDED')
-    console.log('  - Database URL:', databaseUrl ? `${databaseUrl.substring(0, 30)}...` : 'NOT PROVIDED')
+    console.log('  - Service Role Key:', serviceRoleKey ? `${serviceRoleKey.substring(0, 20)}...` : 'NOT PROVIDED (from env vars)')
+    console.log('  - Database URL:', databaseUrl ? `${databaseUrl.substring(0, 30)}...` : 'NOT PROVIDED (from env vars)')
 
     // Use service role key if provided, otherwise use anon key
     // Service role key bypasses RLS, which is needed for setup

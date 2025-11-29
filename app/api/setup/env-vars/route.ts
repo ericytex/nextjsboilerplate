@@ -19,13 +19,17 @@ export async function GET() {
     // We'll check if it exists but not return it
     const hasServiceRoleKey = !!process.env.SUPABASE_SERVICE_ROLE_KEY
 
+    // Check if Database URL exists (but don't return it for security)
+    const hasDatabaseUrl = !!process.env.DATABASE_URL
+
     return NextResponse.json({
       hasEnvVars: !!(supabaseUrl && (anonKey || hasServiceRoleKey)),
       supabaseUrl: supabaseUrl || '',
       anonKey: anonKey || '',
       hasServiceRoleKey: hasServiceRoleKey,
-      // Don't return service role key for security
-      // User can add it manually if needed
+      hasDatabaseUrl: hasDatabaseUrl,
+      // Don't return service role key or database URL for security
+      // User can add them manually if needed, or they'll be used server-side
     })
   } catch (error: any) {
     console.error('Error reading env vars:', error)
