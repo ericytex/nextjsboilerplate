@@ -224,74 +224,85 @@ function PaymentsContent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-semibold text-lg">{subscription.plan} Plan</p>
-                    <p className="text-sm text-muted-foreground">
-                      {subscription.billingCycle === 'monthly' ? 'Monthly' : 'Yearly'} billing
-                    </p>
-                  </div>
-                  <Badge variant={subscription.status === 'active' ? 'default' : 'secondary'}>
-                    {subscription.status}
-                  </Badge>
+              {!subscription ? (
+                <div className="text-center py-8">
+                  <p className="text-muted-foreground mb-4">No active subscription</p>
+                  <Button variant="outline" asChild>
+                    <a href="/pricing">View Plans</a>
+                  </Button>
                 </div>
-
-                <Separator />
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Amount</p>
-                    <p className="text-2xl font-bold">{subscription.amount}</p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {subscription.billingCycle === 'monthly' ? 'per month' : 'per year'}
-                    </p>
-                  </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground flex items-center gap-2">
-                      <Calendar className="h-4 w-4" />
-                      Next Billing Date
-                    </p>
-                    <p className="text-lg font-semibold">
-                      {new Date(subscription.nextBillingDate).toLocaleDateString('en-US', {
-                        month: 'long',
-                        day: 'numeric',
-                        year: 'numeric'
-                      })}
-                    </p>
-                  </div>
-                </div>
-
-                {subscription.cancelAtPeriodEnd && (
-                  <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-2">
-                    <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+              ) : (
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
                     <div>
-                      <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
-                        Subscription will be cancelled
-                      </p>
-                      <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
-                        Your subscription will end on {new Date(subscription.nextBillingDate).toLocaleDateString()}
+                      <p className="font-semibold text-lg">{subscription.planDisplayName || subscription.plan} Plan</p>
+                      <p className="text-sm text-muted-foreground">
+                        {subscription.billingCycle === 'monthly' ? 'Monthly' : 'Yearly'} billing
                       </p>
                     </div>
+                    <Badge variant={subscription.status === 'active' ? 'default' : 'secondary'}>
+                      {subscription.status}
+                    </Badge>
                   </div>
-                )}
 
-                <div className="flex gap-2">
-                  <Button variant="outline" size="sm">
-                    Change Plan
-                  </Button>
-                  {!subscription.cancelAtPeriodEnd && (
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={handleCancelSubscription}
-                      disabled={loading}
-                    >
-                      Cancel Subscription
-                    </Button>
+                  <Separator />
+
+                  <div className="grid gap-4 md:grid-cols-2">
+                    <div>
+                      <p className="text-sm text-muted-foreground">Amount</p>
+                      <p className="text-2xl font-bold">{subscription.amount || 'N/A'}</p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {subscription.billingCycle === 'monthly' ? 'per month' : 'per year'}
+                      </p>
+                    </div>
+                    {subscription.currentPeriodEnd && (
+                      <div>
+                        <p className="text-sm text-muted-foreground flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          Next Billing Date
+                        </p>
+                        <p className="text-lg font-semibold">
+                          {new Date(subscription.currentPeriodEnd).toLocaleDateString('en-US', {
+                            month: 'long',
+                            day: 'numeric',
+                            year: 'numeric'
+                          })}
+                        </p>
+                      </div>
+                    )}
+                  </div>
+
+                  {subscription.cancelAtPeriodEnd && subscription.currentPeriodEnd && (
+                    <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-lg flex items-start gap-2">
+                      <AlertCircle className="h-5 w-5 text-yellow-600 dark:text-yellow-400 mt-0.5" />
+                      <div>
+                        <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
+                          Subscription will be cancelled
+                        </p>
+                        <p className="text-xs text-yellow-700 dark:text-yellow-300 mt-1">
+                          Your subscription will end on {new Date(subscription.currentPeriodEnd).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
                   )}
+
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" asChild>
+                      <a href="/pricing">Change Plan</a>
+                    </Button>
+                    {!subscription.cancelAtPeriodEnd && (
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleCancelSubscription}
+                        disabled={loading}
+                      >
+                        Cancel Subscription
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
+              )}
             </CardContent>
           </Card>
 
@@ -308,7 +319,7 @@ function PaymentsContent() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {subscription && subscription.status === 'active' ? (
+                {subscription && (subscription.status === 'active' || subscription.status === 'trialing') ? (
                   <>
                     {/* Show current payment method info if available */}
                     {paymentMethods.length > 0 ? (
