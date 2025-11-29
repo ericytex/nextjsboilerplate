@@ -62,57 +62,67 @@ export async function POST(request: Request) {
       
       // IMPORTANT: PGRST205 can mean tables don't exist OR RLS is blocking access
       // If we have service role key, verify if tables actually exist by checking with service role key
-      if (isTableMissingError && serviceRoleKey) {
-        console.log('🔍 PGRST205 detected - verifying if tables exist using Service Role Key...')
-        const serviceRoleSupabase = createSupabaseClient(projectUrl, serviceRoleKey)
-        const { error: serviceRoleCheckError } = await serviceRoleSupabase
-          .from('integration_configs')
-          .select('id')
-          .limit(1)
-        
-        if (!serviceRoleCheckError) {
-          // Tables exist! It's an RLS issue, not missing tables
-          console.log('✅ Tables exist but RLS is blocking access with Anon key')
-          permissionIssue = true
-          tablesExist = true // Tables exist, just blocked
-        } else {
-          // Tables truly don't exist - try to create them if we have database URL
-          if (databaseUrl) {
-            console.log('🔧 Tables truly missing - attempting automatic creation...')
-            try {
-              const createResult = await createTablesAutomatically(projectUrl, serviceRoleKey, projectId, sql, databaseUrl)
-              
-              if (createResult.success) {
-                console.log('✅ Tables created! Waiting for schema cache refresh...')
-                await new Promise(resolve => setTimeout(resolve, 3000))
+      if (isTableMissingError) {
+        if (serviceRoleKey) {
+          console.log('🔍 PGRST205 detected - verifying if tables exist using Service Role Key...')
+          const serviceRoleSupabase = createSupabaseClient(projectUrl, serviceRoleKey)
+          const { error: serviceRoleCheckError } = await serviceRoleSupabase
+            .from('integration_configs')
+            .select('id')
+            .limit(1)
+          
+          if (!serviceRoleCheckError) {
+            // Tables exist! It's an RLS issue, not missing tables
+            console.log('✅ Tables exist but RLS is blocking access with Anon key')
+            permissionIssue = true
+            tablesExist = true // Tables exist, just blocked
+            // Update tableCheckError to reflect this is a permission issue, not missing tables
+            tableCheckError = {
+              code: '42501',
+              message: 'RLS is blocking access. Tables exist but cannot be accessed with Anon key.',
+              hint: 'Use Service Role Key to bypass RLS'
+            }
+          } else {
+            // Tables truly don't exist - try to create them if we have database URL
+            if (databaseUrl) {
+              console.log('🔧 Tables truly missing - attempting automatic creation...')
+              try {
+                const createResult = await createTablesAutomatically(projectUrl, serviceRoleKey, projectId, sql, databaseUrl)
                 
-                // Verify tables were created
-                const verifySupabase = createSupabaseClient(projectUrl, serviceRoleKey)
-                const { error: verifyError } = await verifySupabase
-                  .from('integration_configs')
-                  .select('id')
-                  .limit(1)
-                
-                if (!verifyError) {
-                  console.log('✅ Tables verified after automatic creation!')
-                  tablesExist = true
-                  tableCheckError = null
+                if (createResult.success) {
+                  console.log('✅ Tables created! Waiting for schema cache refresh...')
+                  await new Promise(resolve => setTimeout(resolve, 3000))
+                  
+                  // Verify tables were created
+                  const verifySupabase = createSupabaseClient(projectUrl, serviceRoleKey)
+                  const { error: verifyError } = await verifySupabase
+                    .from('integration_configs')
+                    .select('id')
+                    .limit(1)
+                  
+                  if (!verifyError) {
+                    console.log('✅ Tables verified after automatic creation!')
+                    tablesExist = true
+                    tableCheckError = null
+                  } else {
+                    console.log('⚠️ Tables created but verification still failing:', verifyError.message)
+                    tableCheckError = verifyError
+                  }
                 } else {
-                  console.log('⚠️ Tables created but verification still failing:', verifyError.message)
-                  tableCheckError = verifyError
+                  console.log('❌ Automatic table creation failed:', createResult.error)
                 }
-              } else {
-                console.log('❌ Automatic table creation failed:', createResult.error)
+              } catch (autoCreateError: any) {
+                console.error('❌ Error during automatic table creation:', autoCreateError)
               }
-            } catch (autoCreateError: any) {
-              console.error('❌ Error during automatic table creation:', autoCreateError)
+            } else {
+              console.log('⚠️ Tables missing but no Database URL provided for automatic creation')
             }
           }
+        } else {
+          // No service role key - can't verify if tables exist or if it's RLS
+          // Assume tables don't exist for now, but user should add service role key
+          console.log('⚠️ PGRST205 detected but no Service Role Key to verify if tables exist')
         }
-      } else if (isTableMissingError && !serviceRoleKey) {
-        // No service role key - can't verify if tables exist or if it's RLS
-        // Assume tables don't exist for now, but user should add service role key
-        console.log('⚠️ PGRST205 detected but no Service Role Key to verify if tables exist')
       }
       
       // Check if it's a permission issue
