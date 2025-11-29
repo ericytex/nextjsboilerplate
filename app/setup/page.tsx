@@ -775,24 +775,9 @@ export default function SetupPage() {
       return
     }
 
-    // Check if Service Role Key is provided (required for admin creation)
-    if (!databaseConfig.serviceRoleKey?.trim()) {
-      toast.error('Service Role Key Required', {
-        description: 'Admin user creation requires Service Role Key to bypass RLS. Please add it in the database setup step.',
-        duration: 10000
-      })
-      setErrorMessage(
-        `🔑 Service Role Key Required\n\n` +
-        `Admin user creation requires Service Role Key to bypass Row Level Security (RLS) policies.\n\n` +
-        `Please:\n` +
-        `1. Go back to the Database Setup step\n` +
-        `2. Add your Service Role Key in the "Service Role Key (Optional)" field\n` +
-        `3. Click "Continue" to save the configuration\n` +
-        `4. Then try creating the admin user again\n\n` +
-        `The Service Role Key bypasses RLS and allows admin user creation.`
-      )
-      return
-    }
+    // Note: Service Role Key can be in .env.local (SUPABASE_SERVICE_ROLE_KEY)
+    // The API will automatically use it from env vars if not provided in the form
+    // So we don't need to block here - let the API handle it
 
     setLoading(true)
     setErrorMessage('')
@@ -820,13 +805,19 @@ export default function SetupPage() {
       } else {
         if (data.needsServiceRoleKey) {
           toast.error('Service Role Key Required', {
-            description: data.details || 'Please add Service Role Key in database setup step.',
-            duration: 10000
+            description: data.details || data.hint || 'Please add SUPABASE_SERVICE_ROLE_KEY to your .env.local file or in the database setup step.',
+            duration: 15000
           })
           setErrorMessage(
             `🔑 Service Role Key Required\n\n` +
             `${data.details || 'Admin user creation requires Service Role Key to bypass RLS policies.'}\n\n` +
-            `Please:\n` +
+            `${data.hint ? `💡 ${data.hint}\n\n` : ''}` +
+            `You can add it in one of two ways:\n\n` +
+            `Option 1 (Recommended): Add to .env.local\n` +
+            `Add this line to your .env.local file:\n` +
+            `SUPABASE_SERVICE_ROLE_KEY=your_service_role_key_here\n\n` +
+            `Then restart your dev server (npm run dev)\n\n` +
+            `Option 2: Add in Database Setup\n` +
             `1. Go back to the Database Setup step\n` +
             `2. Add your Service Role Key in the "Service Role Key (Optional)" field\n` +
             `3. Click "Continue" to save the configuration\n` +
