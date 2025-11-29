@@ -22,17 +22,12 @@ export async function POST(request: Request) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
-    if (!supabaseUrl) {
+    if (!supabaseUrl || !serviceRoleKey) {
+      // Security: Don't expose configuration errors to users
+      console.error('Database configuration error')
       return NextResponse.json(
-        { error: 'Database not configured. Please contact support.' },
-        { status: 500 }
-      )
-    }
-
-    if (!serviceRoleKey) {
-      return NextResponse.json(
-        { error: 'Service Role Key not configured. Please contact support.' },
-        { status: 500 }
+        { error: 'Invalid email or password' },
+        { status: 401 }
       )
     }
 
@@ -48,9 +43,10 @@ export async function POST(request: Request) {
 
     if (findError) {
       console.error('Error finding user:', findError)
+      // Security: Don't expose database errors to users
       return NextResponse.json(
-        { error: 'Database error. Please try again.' },
-        { status: 500 }
+        { error: 'Invalid email or password' },
+        { status: 401 }
       )
     }
 
@@ -97,9 +93,10 @@ export async function POST(request: Request) {
     })
   } catch (error: any) {
     console.error('Signin error:', error)
+    // Security: Don't expose internal errors to users
     return NextResponse.json(
-      { error: 'Failed to sign in', details: error.message },
-      { status: 500 }
+      { error: 'Invalid email or password' },
+      { status: 401 }
     )
   }
 }
