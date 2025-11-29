@@ -32,13 +32,17 @@ export function middleware(request: NextRequest) {
                       process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   
   // If no Supabase URL or key in environment, redirect to setup
-  // The setup page will handle checking if database is actually configured
+  // The setup page will check if database is actually configured and redirect if already complete
   if (!supabaseUrl || !supabaseKey) {
-    return NextResponse.redirect(new URL('/setup', request.url))
+    // Only redirect if not already on setup page
+    if (pathname !== '/setup') {
+      return NextResponse.redirect(new URL('/setup', request.url))
+    }
   }
 
-  // If we have Supabase URL, allow the request through
-  // The setup page will check if admin exists and redirect if setup is complete
+  // If we have Supabase URL and key, allow the request through
+  // The setup page will check if admin exists and redirect to dashboard if setup is complete
+  // The dashboard and other pages will check authentication separately
   return NextResponse.next()
 }
 

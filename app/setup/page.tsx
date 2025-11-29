@@ -65,8 +65,8 @@ export default function SetupPage() {
       
       if (data.setupComplete) {
         // Setup already done, redirect to dashboard immediately
+        // Don't show toast on every page load - only if user manually visits /setup
         console.log('✅ Setup complete - redirecting to dashboard')
-        toast.success('Setup already complete! Redirecting to dashboard...')
         router.push('/dashboard')
         return
       } else if (data.needsAdmin) {
