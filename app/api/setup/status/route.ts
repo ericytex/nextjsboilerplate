@@ -74,7 +74,7 @@ export async function GET() {
         if (error.code === '42501' || error.message?.includes('row-level security') || error.message?.includes('RLS')) {
           // If we're using anon key and getting RLS error, try to check if we can at least connect
           // If service role key is not available, we can't verify admin exists
-          if (!finalServiceRoleKey) {
+          if (!serviceRoleKey) {
             return NextResponse.json({
               setupComplete: false,
               message: 'RLS blocking access. Service Role Key needed to verify setup status.',
