@@ -383,13 +383,9 @@ WITH CHECK (true);`,
     // Successfully saved! Tables are verified and config is saved
     // No need to check users table again since we already verified it above
 
-    // Update environment variables (for this session)
-    // In production, you'd want to update .env or use a config service
-    process.env.NEXT_PUBLIC_SUPABASE_URL = projectUrl
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY = anonKey
-    if (serviceRoleKey) {
-      process.env.SUPABASE_SERVICE_ROLE_KEY = serviceRoleKey
-    }
+    // Note: Environment variables cannot be set at runtime in Next.js
+    // They are read-only. Configuration is saved to integration_configs table instead.
+    // Environment variables should be set in .env.local or deployment platform
 
     return NextResponse.json({
       success: true,
