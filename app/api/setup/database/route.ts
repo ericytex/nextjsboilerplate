@@ -509,27 +509,41 @@ async function createTablesAutomatically(
       console.log('✅ Connected to PostgreSQL database')
 
       // Execute the SQL schema
-      // Split by semicolons and execute each statement
-      const statements = sql
+      // Remove comments and split by semicolons
+      const cleanSql = sql
+        .split('\n')
+        .filter(line => !line.trim().startsWith('--') || line.trim().startsWith('-- Complete'))
+        .join('\n')
+      
+      const statements = cleanSql
         .split(';')
         .map(s => s.trim())
         .filter(s => s.length > 0 && !s.startsWith('--'))
 
-      for (const statement of statements) {
+      console.log(`📝 Executing ${statements.length} SQL statements...`)
+      
+      for (let i = 0; i < statements.length; i++) {
+        const statement = statements[i]
         if (statement.trim()) {
           try {
             await client.query(statement)
-            console.log('✅ Executed SQL statement')
+            console.log(`✅ Executed statement ${i + 1}/${statements.length}`)
           } catch (queryError: any) {
             // Ignore errors for IF NOT EXISTS statements (tables might already exist)
-            if (!queryError.message?.includes('already exists') && 
-                !queryError.message?.includes('duplicate')) {
-              console.warn('⚠️ SQL statement warning:', queryError.message)
-              // Continue with other statements
+            const isIgnorableError = 
+              queryError.message?.includes('already exists') || 
+              queryError.message?.includes('duplicate') ||
+              queryError.message?.includes('does not exist') && statement.includes('DROP')
+            
+            if (!isIgnorableError) {
+              console.warn(`⚠️ SQL statement ${i + 1} warning:`, queryError.message)
+              // Log but continue - some statements might fail if objects already exist
             }
           }
         }
       }
+      
+      console.log('✅ All SQL statements executed')
 
       // Refresh PostgREST schema cache
       try {
