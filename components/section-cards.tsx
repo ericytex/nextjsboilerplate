@@ -9,111 +9,117 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
+interface MetricCardProps {
+  title: string
+  value: string
+  description: string
+  footerText: string
+  trend?: string
+  status?: string
+  icon: React.ReactNode
+}
+
+function MetricCard({ 
+  title, 
+  value, 
+  description, 
+  footerText, 
+  trend, 
+  status,
+  icon
+}: Omit<MetricCardProps, 'gradient'>) {
+  return (
+    <Card className="group relative border overflow-hidden bg-card shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] hover:-translate-y-1">
+      {/* Top accent bar */}
+      <div className="h-1 bg-muted" />
+      
+      <CardHeader className="relative pb-4">
+        {/* Icon in top right */}
+        <div className="absolute right-5 top-5 p-2.5 bg-muted rounded-xl shadow-sm group-hover:scale-110 transition-transform duration-300">
+          <div className="text-muted-foreground">
+            {icon}
+          </div>
+        </div>
+        
+        {/* Content */}
+        <div className="pr-20 space-y-3">
+          <CardDescription className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">
+            {title}
+          </CardDescription>
+          
+          <div className="flex items-baseline justify-between gap-4">
+            <CardTitle className="text-4xl md:text-5xl font-bold tabular-nums text-foreground leading-none">
+              {value}
+            </CardTitle>
+            
+            {/* Badge */}
+            {(trend || status) && (
+              <Badge className="flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-semibold bg-muted text-muted-foreground border shadow-sm">
+                {trend ? (
+                  <>
+                    <TrendingUpIcon className="size-3.5" />
+                    {trend}
+                  </>
+                ) : (
+                  status
+                )}
+              </Badge>
+            )}
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardFooter className="flex-col items-start gap-2 pt-4 pb-5 px-6 bg-muted/30 border-t">
+        <div className="flex items-center gap-2 text-sm font-semibold text-foreground">
+          {description}
+          <TrendingUpIcon className="size-4" />
+        </div>
+        <div className="text-sm text-muted-foreground">
+          {footerText}
+        </div>
+      </CardFooter>
+    </Card>
+  )
+}
+
 export function SectionCards() {
   return (
-    <div className="@xl/main:grid-cols-2 @5xl/main:grid-cols-4 grid grid-cols-1 gap-4 lg:px-0">
-      <Card className="@container/card border-2 overflow-hidden bg-gradient-to-br from-blue-50 via-white to-cyan-50 dark:from-blue-950/20 dark:via-gray-900 dark:to-cyan-950/20 shadow-lg hover:shadow-xl transition-all duration-300">
-        <div className="h-1 bg-gradient-to-r from-blue-500 to-cyan-500" />
-        <CardHeader className="relative">
-          <div className="absolute right-4 top-4 p-2 bg-gradient-to-br from-blue-500 to-cyan-500 rounded-lg shadow-md">
-            <Video className="h-5 w-5 text-white" />
-          </div>
-          <CardDescription className="text-blue-700 dark:text-blue-300 font-medium">Videos Created</CardDescription>
-          <CardTitle className="@[250px]/card:text-4xl text-3xl font-bold tabular-nums bg-gradient-to-r from-blue-600 to-cyan-600 bg-clip-text text-transparent">
-            127
-          </CardTitle>
-          <div className="absolute right-4 top-16">
-            <Badge className="flex gap-1 rounded-lg text-xs bg-gradient-to-r from-blue-500 to-cyan-500 text-white border-0 shadow-sm">
-              <TrendingUpIcon className="size-3" />
-              +18.5%
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm bg-gradient-to-r from-blue-50/50 to-cyan-50/50 dark:from-blue-950/10 dark:to-cyan-950/10">
-          <div className="line-clamp-1 flex gap-2 font-semibold text-blue-900 dark:text-blue-100">
-            Up this month <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-blue-700 dark:text-blue-300">
-            {127 - 15} videos this month
-          </div>
-        </CardFooter>
-      </Card>
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5 lg:gap-6">
+      <MetricCard
+        title="Videos Created"
+        value="127"
+        description="Up this month"
+        footerText="112 videos this month"
+        trend="+18.5%"
+        icon={<Video className="h-6 w-6" />}
+      />
       
-      <Card className="@container/card border-2 overflow-hidden bg-gradient-to-br from-purple-50 via-white to-pink-50 dark:from-purple-950/20 dark:via-gray-900 dark:to-pink-950/20 shadow-lg hover:shadow-xl transition-all duration-300">
-        <div className="h-1 bg-gradient-to-r from-purple-500 to-pink-500" />
-        <CardHeader className="relative">
-          <div className="absolute right-4 top-4 p-2 bg-gradient-to-br from-purple-500 to-pink-500 rounded-lg shadow-md">
-            <Eye className="h-5 w-5 text-white" />
-          </div>
-          <CardDescription className="text-purple-700 dark:text-purple-300 font-medium">Total Views</CardDescription>
-          <CardTitle className="@[250px]/card:text-4xl text-3xl font-bold tabular-nums bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-            1.2M
-          </CardTitle>
-          <div className="absolute right-4 top-16">
-            <Badge className="flex gap-1 rounded-lg text-xs bg-gradient-to-r from-purple-500 to-pink-500 text-white border-0 shadow-sm">
-              <TrendingUpIcon className="size-3" />
-              +32.1%
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm bg-gradient-to-r from-purple-50/50 to-pink-50/50 dark:from-purple-950/10 dark:to-pink-950/10">
-          <div className="line-clamp-1 flex gap-2 font-semibold text-purple-900 dark:text-purple-100">
-            Growing fast <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-purple-700 dark:text-purple-300">
-            Across all platforms
-          </div>
-        </CardFooter>
-      </Card>
+      <MetricCard
+        title="Total Views"
+        value="1.2M"
+        description="Growing fast"
+        footerText="Across all platforms"
+        trend="+32.1%"
+        icon={<Eye className="h-6 w-6" />}
+      />
       
-      <Card className="@container/card border-2 overflow-hidden bg-gradient-to-br from-amber-50 via-white to-orange-50 dark:from-amber-950/20 dark:via-gray-900 dark:to-orange-950/20 shadow-lg hover:shadow-xl transition-all duration-300">
-        <div className="h-1 bg-gradient-to-r from-amber-500 to-orange-500" />
-        <CardHeader className="relative">
-          <div className="absolute right-4 top-4 p-2 bg-gradient-to-br from-amber-500 to-orange-500 rounded-lg shadow-md">
-            <Zap className="h-5 w-5 text-white" />
-          </div>
-          <CardDescription className="text-amber-700 dark:text-amber-300 font-medium">Credits Remaining</CardDescription>
-          <CardTitle className="@[250px]/card:text-4xl text-3xl font-bold tabular-nums bg-gradient-to-r from-amber-600 to-orange-600 bg-clip-text text-transparent">
-            342
-          </CardTitle>
-          <div className="absolute right-4 top-16">
-            <Badge className="flex gap-1 rounded-lg text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0 shadow-sm">
-              Active
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm bg-gradient-to-r from-amber-50/50 to-orange-50/50 dark:from-amber-950/10 dark:to-orange-950/10">
-          <div className="line-clamp-1 flex gap-2 font-semibold text-amber-900 dark:text-amber-100">
-            Good balance <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-amber-700 dark:text-amber-300">Resets monthly</div>
-        </CardFooter>
-      </Card>
+      <MetricCard
+        title="Credits Remaining"
+        value="342"
+        description="Good balance"
+        footerText="Resets monthly"
+        status="Active"
+        icon={<Zap className="h-6 w-6" />}
+      />
       
-      <Card className="@container/card border-2 overflow-hidden bg-gradient-to-br from-emerald-50 via-white to-teal-50 dark:from-emerald-950/20 dark:via-gray-900 dark:to-teal-950/20 shadow-lg hover:shadow-xl transition-all duration-300">
-        <div className="h-1 bg-gradient-to-r from-emerald-500 to-teal-500" />
-        <CardHeader className="relative">
-          <div className="absolute right-4 top-4 p-2 bg-gradient-to-br from-emerald-500 to-teal-500 rounded-lg shadow-md">
-            <Heart className="h-5 w-5 text-white" />
-          </div>
-          <CardDescription className="text-emerald-700 dark:text-emerald-300 font-medium">Avg. Engagement</CardDescription>
-          <CardTitle className="@[250px]/card:text-4xl text-3xl font-bold tabular-nums bg-gradient-to-r from-emerald-600 to-teal-600 bg-clip-text text-transparent">
-            8.4%
-          </CardTitle>
-          <div className="absolute right-4 top-16">
-            <Badge className="flex gap-1 rounded-lg text-xs bg-gradient-to-r from-emerald-500 to-teal-500 text-white border-0 shadow-sm">
-              <TrendingUpIcon className="size-3" />
-              +2.1%
-            </Badge>
-          </div>
-        </CardHeader>
-        <CardFooter className="flex-col items-start gap-1 text-sm bg-gradient-to-r from-emerald-50/50 to-teal-50/50 dark:from-emerald-950/10 dark:to-teal-950/10">
-          <div className="line-clamp-1 flex gap-2 font-semibold text-emerald-900 dark:text-emerald-100">
-            Above average <TrendingUpIcon className="size-4" />
-          </div>
-          <div className="text-emerald-700 dark:text-emerald-300">Industry avg: 6.2%</div>
-        </CardFooter>
-      </Card>
+      <MetricCard
+        title="Avg. Engagement"
+        value="8.4%"
+        description="Above average"
+        footerText="Industry avg: 6.2%"
+        trend="+2.1%"
+        icon={<Heart className="h-6 w-6" />}
+      />
     </div>
   )
 }

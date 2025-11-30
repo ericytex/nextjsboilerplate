@@ -12,6 +12,20 @@ export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {
+    // Verify authentication
+    const { getAuthenticatedUser } = await import('@/lib/api-auth')
+    const authUser = await getAuthenticatedUser(request)
+
+    if (!authUser) {
+      return NextResponse.json({
+        success: false,
+        error: 'Authentication required',
+        message: 'Please sign in to access this resource'
+      }, { status: 401 })
+    }
+
+    const userId = authUser.userId
+
     // Get Supabase credentials
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -21,17 +35,6 @@ export async function GET(request: NextRequest) {
         success: false,
         error: 'Supabase not configured'
       }, { status: 503 })
-    }
-
-    // Get user ID from query parameter (client will pass it from localStorage)
-    const searchParams = request.nextUrl.searchParams
-    const userId = searchParams.get('userId')
-
-    if (!userId) {
-      return NextResponse.json({
-        success: false,
-        error: 'User ID is required'
-      }, { status: 400 })
     }
 
     const supabase = createSupabaseClient(supabaseUrl, serviceRoleKey)

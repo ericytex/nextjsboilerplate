@@ -13,15 +13,19 @@ export const dynamic = 'force-dynamic'
 // Get notification preferences
 export async function GET(request: NextRequest) {
   try {
-    const searchParams = request.nextUrl.searchParams
-    const userId = searchParams.get('userId')
+    // Verify authentication
+    const { getAuthenticatedUser } = await import('@/lib/api-auth')
+    const authUser = await getAuthenticatedUser(request)
 
-    if (!userId) {
+    if (!authUser) {
       return NextResponse.json({
         success: false,
-        error: 'User ID is required'
-      }, { status: 400 })
+        error: 'Authentication required',
+        message: 'Please sign in to access this resource'
+      }, { status: 401 })
     }
+
+    const userId = authUser.userId
 
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -90,15 +94,21 @@ export async function GET(request: NextRequest) {
 // Update notification preferences
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { userId, notifications } = body
+    // Verify authentication
+    const { getAuthenticatedUser } = await import('@/lib/api-auth')
+    const authUser = await getAuthenticatedUser(request)
 
-    if (!userId) {
+    if (!authUser) {
       return NextResponse.json({
         success: false,
-        error: 'User ID is required'
-      }, { status: 400 })
+        error: 'Authentication required',
+        message: 'Please sign in to access this resource'
+      }, { status: 401 })
     }
+
+    const userId = authUser.userId
+    const body = await request.json()
+    const { notifications } = body
 
     if (!notifications) {
       return NextResponse.json({

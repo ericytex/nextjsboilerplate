@@ -171,9 +171,8 @@ export async function POST(request: Request) {
       console.warn('⚠️ Failed to log signin activity (non-critical):', logError)
     }
 
-    // Create session token (in production, use proper session management)
-    // For now, we'll return user data and let the client handle session
-    return NextResponse.json({
+    // Create session response with cookie
+    const response = NextResponse.json({
       success: true,
       message: 'Sign in successful',
       user: {
@@ -184,6 +183,21 @@ export async function POST(request: Request) {
         emailVerified: user.email_verified
       }
     })
+
+    // Set session cookie (httpOnly for security, but we'll also set a readable one for client-side checks)
+    const cookieOptions = {
+      httpOnly: false, // Allow client-side access for localStorage compatibility
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax' as const,
+      maxAge: 60 * 60 * 24 * 7, // 7 days
+      path: '/'
+    }
+
+    // Set userId in cookie for middleware/API route access
+    response.cookies.set('user_id', user.id, cookieOptions)
+    response.cookies.set('user_session', 'true', cookieOptions)
+
+    return response
   } catch (error: any) {
     console.error('Signin error:', error)
     // Security: Don't expose internal errors to users

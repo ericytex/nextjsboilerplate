@@ -35,10 +35,16 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({
+    const response = NextResponse.json({
       success: true,
       message: 'Logged out successfully'
     })
+
+    // Clear session cookies
+    response.cookies.delete('user_id')
+    response.cookies.delete('user_session')
+
+    return response
   } catch (error: any) {
     console.error('Logout error:', error)
     return NextResponse.json(

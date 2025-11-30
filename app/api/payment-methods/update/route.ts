@@ -13,8 +13,21 @@ export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {
+    // Verify authentication
+    const { getAuthenticatedUser } = await import('@/lib/api-auth')
+    const authUser = await getAuthenticatedUser(request)
+
+    if (!authUser) {
+      return NextResponse.json({
+        success: false,
+        error: 'Authentication required',
+        message: 'Please sign in to access this resource'
+      }, { status: 401 })
+    }
+
+    const userId = authUser.userId
     const body = await request.json()
-    const { userId, subscriptionId, productId } = body
+    const { subscriptionId, productId } = body
 
     // Get Supabase credentials
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || process.env.SUPABASE_URL

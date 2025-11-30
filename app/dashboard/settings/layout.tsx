@@ -1,7 +1,6 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { SiteHeader } from "@/components/site-header"
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar"
-import { SessionTracker } from "../session-tracker"
 
 export default function SettingsLayout({
   children,
@@ -10,7 +9,6 @@ export default function SettingsLayout({
 }) {
   return (
     <SidebarProvider>
-      <SessionTracker />
       <AppSidebar variant="inset" />
       <SidebarInset>
         <SiteHeader />

@@ -13,15 +13,21 @@ export const dynamic = 'force-dynamic'
 
 export async function PUT(request: NextRequest) {
   try {
-    const body = await request.json()
-    const { userId, currentPassword, newPassword } = body
+    // Verify authentication
+    const { getAuthenticatedUser } = await import('@/lib/api-auth')
+    const authUser = await getAuthenticatedUser(request)
 
-    if (!userId) {
+    if (!authUser) {
       return NextResponse.json({
         success: false,
-        error: 'User ID is required'
-      }, { status: 400 })
+        error: 'Authentication required',
+        message: 'Please sign in to access this resource'
+      }, { status: 401 })
     }
+
+    const userId = authUser.userId
+    const body = await request.json()
+    const { currentPassword, newPassword } = body
 
     if (!currentPassword || !newPassword) {
       return NextResponse.json({

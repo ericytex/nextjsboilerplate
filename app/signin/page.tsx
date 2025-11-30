@@ -101,6 +101,9 @@ function SigninForm() {
           localStorage.setItem('user_id', data.user.id)
           localStorage.setItem('user_email', data.user.email)
           localStorage.setItem('user_role', data.user.role)
+          
+          // Cookies are set by the server response, but ensure they're available client-side
+          // The server already sets cookies in the response
         }
         
         // Redirect to dashboard after login
