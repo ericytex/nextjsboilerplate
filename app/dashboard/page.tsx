@@ -24,7 +24,7 @@ export default function Page() {
                     Dashboard
                   </h1>
                   <p className="text-muted-foreground mt-2">
-                    Welcome back! Here's what's happening with your account.
+                    Welcome back! Here&apos;s what&apos;s happening with your account.
                   </p>
                 </div>
                 <SectionCards />

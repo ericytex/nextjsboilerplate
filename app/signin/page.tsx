@@ -197,7 +197,7 @@ function SigninForm() {
                         >
                           create an account
                         </Link>
-                        {' '}if you don't have one.
+                        {' '}if you don&apos;t have one.
                       </p>
                     </div>
                     <button
@@ -271,7 +271,7 @@ function SigninForm() {
 
               <div className="mt-6 text-center">
                 <p className="text-sm text-gray-600">
-                  Don't have an account?{' '}
+                  Don&apos;t have an account?{' '}
                   <Link href="/signup" className="text-gray-900 font-semibold hover:underline no-underline">
                     Sign up
                   </Link>

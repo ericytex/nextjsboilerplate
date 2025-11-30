@@ -310,7 +310,7 @@ export default function SecurityPage() {
                         ⚠️ Save this API key now!
                       </p>
                       <p className="text-sm text-amber-800 dark:text-amber-200 mb-3">
-                        This is the only time you'll be able to see this key. Make sure to copy it and store it securely.
+                        This is the only time you&apos;ll be able to see this key. Make sure to copy it and store it securely.
                       </p>
                       <div className="flex items-center gap-2">
                         <code className="text-sm bg-white dark:bg-gray-800 px-3 py-2 rounded border flex-1 font-mono break-all">

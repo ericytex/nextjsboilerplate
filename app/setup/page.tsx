@@ -901,7 +901,7 @@ export default function SetupPage() {
                   onChange={(e) => setDatabaseConfig({ ...databaseConfig, projectUrl: e.target.value })}
                 />
                 <p className="text-xs text-muted-foreground">
-                  <strong>New UI:</strong> Click "Connect" button at top → App Frameworks → Next.js → Copy SUPABASE_URL
+                  <strong>New UI:</strong> Click &quot;Connect&quot; button at top → App Frameworks → Next.js → Copy SUPABASE_URL
                   <br />
                   <strong>Old UI:</strong> Settings → API → Project URL
                 </p>
@@ -928,7 +928,7 @@ export default function SetupPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  <strong>New UI:</strong> Click "Connect" → App Frameworks → Next.js → Copy the value of <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY</code>
+                  <strong>New UI:</strong> Click &quot;Connect&quot; → App Frameworks → Next.js → Copy the value of <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">NEXT_PUBLIC_SUPABASE_PUBLISHABLE_DEFAULT_KEY</code>
                   <br />
                   <strong>Old UI:</strong> Settings → API → anon/public key (this becomes <code className="bg-gray-100 dark:bg-gray-800 px-1 rounded">NEXT_PUBLIC_SUPABASE_ANON_KEY</code>)
                   <br />
@@ -957,7 +957,7 @@ export default function SetupPage() {
                   </Button>
                 </div>
                 <p className="text-xs text-muted-foreground">
-                  <strong>New UI:</strong> Click "Connect" → App Frameworks → Next.js → Look for service_role key
+                  <strong>New UI:</strong> Click &quot;Connect&quot; → App Frameworks → Next.js → Look for service_role key
                   <br />
                   <strong>Old UI:</strong> Settings → API → service_role key
                   <br />
@@ -1042,7 +1042,7 @@ export default function SetupPage() {
                 <Alert className="bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800">
                   <CheckCircle2 className="h-4 w-4 text-green-600 dark:text-green-400" />
                   <AlertDescription className="text-green-800 dark:text-green-200">
-                    Connection successful! Click "Continue" to proceed.
+                    Connection successful! Click &quot;Continue&quot; to proceed.
                   </AlertDescription>
                 </Alert>
               )}

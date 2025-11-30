@@ -66,7 +66,7 @@ function SuccessContent() {
               🎉 Your Free Plan is Active!
             </p>
             <p className="text-sm text-green-700">
-              Your free plan is active. We're covering the cost for you! Enjoy full access to all free plan features.
+              Your free plan is active. We&apos;re covering the cost for you! Enjoy full access to all free plan features.
             </p>
           </div>
         )}
@@ -76,7 +76,7 @@ function SuccessContent() {
               🎉 Your 14-Day Free Trial is Active!
             </p>
             <p className="text-sm text-green-700">
-              Your card has been saved but you won't be charged for 14 days. Enjoy full access to all Basic plan features!
+              Your card has been saved but you won&apos;t be charged for 14 days. Enjoy full access to all Basic plan features!
             </p>
           </div>
         )}

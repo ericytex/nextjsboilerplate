@@ -360,7 +360,7 @@ export default function Home() {
                       <div className="text-sm text-gray-600">{testimonial.role}</div>
                     </div>
                   </div>
-                  <p className="text-gray-700 mb-4 leading-relaxed">"{testimonial.quote}"</p>
+                  <p className="text-gray-700 mb-4 leading-relaxed">&quot;{testimonial.quote}&quot;</p>
                   <div className="flex items-center gap-2 text-sm font-semibold text-yellow-DEFAULT">
                     <span className="material-symbols-outlined text-lg">trending_up</span>
                     {testimonial.stats}

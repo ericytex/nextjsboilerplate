@@ -354,10 +354,10 @@ export default function IntegrationsPage() {
         '1. Create a Creem.io account: Sign up at https://creem.io to access the dashboard and manage your products and payments',
         '2. Get your API Key: Navigate to Dashboard → Developers section → Click the eye icon to reveal your API key → Copy and store it securely (keep this confidential)',
         '3. Get your Merchant ID: Found in Dashboard → Settings → Account section (or check the Developers section)',
-        '4. Create Products: Go to Dashboard → Products tab → Click "Add Product" → Enter name, description, price, and optionally upload an image → Save the product',
-        '5. Set up Webhook URL: In Dashboard → Developers → Webhooks → Click "Add Webhook" → Enter your endpoint URL (e.g., https://yourdomain.com/api/webhooks/creem) → This will receive real-time payment event notifications',
+        '4. Create Products: Go to Dashboard → Products tab → Click &quot;Add Product&quot; → Enter name, description, price, and optionally upload an image → Save the product',
+        '5. Set up Webhook URL: In Dashboard → Developers → Webhooks → Click &quot;Add Webhook&quot; → Enter your endpoint URL (e.g., https://yourdomain.com/api/webhooks/creem) → This will receive real-time payment event notifications',
         '6. Customize Branding (Optional): Go to Dashboard → Settings → Branding → Upload your logo and set brand colors for a consistent checkout experience',
-        '7. Enable Test Mode: Click the "Test Mode" button in the dashboard top navbar for development → This switches to test-api.creem.io endpoint',
+        '7. Enable Test Mode: Click the &quot;Test Mode&quot; button in the dashboard top navbar for development → This switches to test-api.creem.io endpoint',
         '8. Test Payments: Use test card number 4242 4242 4242 4242 with any expiration date (e.g., 12/25) and any CVV (e.g., 123)',
         '9. Install Creem SDK: Run `npm install @creem_io/nextjs` in your project terminal',
         '10. Configure Environment: Add CREEM_API_KEY=your_api_key to your .env.local file for server-side use'
@@ -714,8 +714,8 @@ export default function IntegrationsPage() {
             <ol className="text-xs text-blue-800 dark:text-blue-200 space-y-1 list-decimal list-inside">
               <li>Toggle ON the integration you want to configure</li>
               <li>Enter your API keys and credentials in the form</li>
-              <li>Click "Test Connection" to verify your credentials</li>
-              <li>Click "Save Changes" to store your configuration</li>
+              <li>Click &quot;Test Connection&quot; to verify your credentials</li>
+              <li>Click &quot;Save Changes&quot; to store your configuration</li>
             </ol>
           </div>
         </div>
@@ -955,7 +955,7 @@ export default function IntegrationsPage() {
                               }}
                             />
                             <p className="text-xs text-muted-foreground">
-                              Add this URL in Dashboard → Developers → Webhooks → "Add Webhook". This endpoint will receive real-time notifications about payment events (payments, subscriptions, refunds, etc.).
+                              Add this URL in Dashboard → Developers → Webhooks → &quot;Add Webhook&quot;. This endpoint will receive real-time notifications about payment events (payments, subscriptions, refunds, etc.).
                             </p>
                           </div>
                           <div className="p-3 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
@@ -2014,7 +2014,7 @@ export default function IntegrationsPage() {
             <CardContent className="py-12 text-center space-y-4">
               <p className="text-muted-foreground text-lg font-medium">No integrations found in this category.</p>
               <p className="text-sm text-muted-foreground">
-                Try selecting "All" to see all available integrations.
+                Try selecting &quot;All&quot; to see all available integrations.
               </p>
               <Button
                 variant="outline"
