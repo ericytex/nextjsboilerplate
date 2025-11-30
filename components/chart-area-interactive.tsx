@@ -161,10 +161,11 @@ export function ChartAreaInteractive() {
   })
 
   return (
-    <Card className="@container/card">
+    <Card className="@container/card border-2 overflow-hidden bg-gradient-to-br from-white to-gray-50 dark:from-gray-900 dark:to-gray-800 shadow-lg">
+      <div className="h-1 bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500" />
       <CardHeader className="relative">
-        <CardTitle>Total Visitors</CardTitle>
-        <CardDescription>
+        <CardTitle className="text-2xl font-bold bg-gradient-to-r from-indigo-600 to-purple-600 bg-clip-text text-transparent">Total Visitors</CardTitle>
+        <CardDescription className="text-gray-600 dark:text-gray-400">
           <span className="@[540px]/card:block hidden">
             Total for the last 3 months
           </span>

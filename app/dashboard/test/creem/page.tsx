@@ -215,8 +215,8 @@ export default function CreemTestPage() {
                     testEndpoint('/api/creem/checkout', 'POST', {
                       productId,
                       customerEmail: email,
-                      successUrl: `${window.location.origin}/success`,
-                      cancelUrl: `${window.location.origin}/cancel`,
+                      successUrl: typeof window !== 'undefined' ? `${window.location.origin}/success` : '/success',
+                      cancelUrl: typeof window !== 'undefined' ? `${window.location.origin}/cancel` : '/cancel',
                     })
                   }}
                   disabled={loading === '/api/creem/checkout'}
@@ -239,7 +239,11 @@ export default function CreemTestPage() {
                       <Button
                         variant="outline"
                         className="mt-2"
-                        onClick={() => window.open(results['/api/creem/checkout'].data.data.checkoutUrl, '_blank')}
+                        onClick={() => {
+                          if (typeof window !== 'undefined') {
+                            window.open(results['/api/creem/checkout'].data.data.checkoutUrl, '_blank')
+                          }
+                        }}
                       >
                         Open Checkout URL
                       </Button>
@@ -406,7 +410,7 @@ export default function CreemTestPage() {
               </CardHeader>
               <CardContent>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Webhook URL: <code className="bg-muted px-2 py-1 rounded">{window.location.origin}/api/webhooks/creem</code>
+                  Webhook URL: <code className="bg-muted px-2 py-1 rounded">{typeof window !== 'undefined' ? window.location.origin : ''}/api/webhooks/creem</code>
                 </p>
                 <Button
                   onClick={() => testEndpoint('/api/webhooks/creem')}

@@ -4,8 +4,8 @@ export interface ActivityLogInput {
   action: string
   resource_type?: string
   resource_id?: string
-  ip_address?: string
-  user_agent?: string
+  ip_address?: string | null
+  user_agent?: string | null
   metadata?: Record<string, any>
   user_id?: string
 }
@@ -28,12 +28,12 @@ export async function logActivity(
     const supabase = createSupabaseClient(projectUrl, serviceRoleKey)
 
     const { error } = await supabase.from('activity_logs').insert({
-      user_id: activity.user_id || null,
+      user_id: activity.user_id || undefined,
       action: activity.action,
-      resource_type: activity.resource_type || null,
-      resource_id: activity.resource_id || null,
-      ip_address: activity.ip_address || null,
-      user_agent: activity.user_agent || null,
+      resource_type: activity.resource_type || undefined,
+      resource_id: activity.resource_id || undefined,
+      ip_address: activity.ip_address || undefined,
+      user_agent: activity.user_agent || undefined,
       metadata: activity.metadata || {}
     })
 

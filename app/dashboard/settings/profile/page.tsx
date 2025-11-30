@@ -278,6 +278,17 @@ export default function ProfilePage() {
                         Subscription will be cancelled at the end of the billing period
                       </div>
                     )}
+
+                    <div className="flex gap-2 pt-2">
+                      <Button variant="outline" size="sm" asChild className="flex-1">
+                        <a href="/dashboard/settings/payments">Manage</a>
+                      </Button>
+                      {!subscription.cancelAtPeriodEnd && (
+                        <Button variant="outline" size="sm" asChild className="flex-1">
+                          <a href="/pricing">Upgrade</a>
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ) : (
                   <div className="space-y-2">

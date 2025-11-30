@@ -67,8 +67,8 @@ export async function POST(request: NextRequest) {
         await logActivity(supabaseUrl, serviceRoleKey, {
           action: 'user.free_plan.activated',
           resource_type: 'subscription',
-          resource_id: null,
-          user_id: null,
+          resource_id: undefined,
+          user_id: undefined,
           ip_address: requestInfo.ip_address,
           user_agent: requestInfo.user_agent,
           metadata: {
@@ -159,7 +159,7 @@ export async function POST(request: NextRequest) {
         await logActivity(supabaseUrl, serviceRoleKey, {
           action: 'user.free_plan.activated',
           resource_type: 'subscription',
-          resource_id: null,
+          resource_id: undefined,
           user_id: user.id,
           ip_address: requestInfo.ip_address,
           user_agent: requestInfo.user_agent,

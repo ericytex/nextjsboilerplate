@@ -96,8 +96,8 @@ export async function POST(request: Request) {
         await logActivity(supabaseUrl, serviceRoleKey, {
           action: 'user.signin.failed',
           resource_type: 'user',
-          resource_id: null,
-          user_id: null,
+          resource_id: undefined,
+          user_id: undefined,
           ip_address: requestInfo.ip_address,
           user_agent: requestInfo.user_agent,
           metadata: {

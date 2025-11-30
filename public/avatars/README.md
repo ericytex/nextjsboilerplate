@@ -15,3 +15,5 @@ This image will be used as the default avatar for all users who haven't uploaded
 The default avatar is a stylized futuristic illustration of a person with headphones in neon blue/purple colors, perfect for a tech/AI-themed application.
 
 
+
+

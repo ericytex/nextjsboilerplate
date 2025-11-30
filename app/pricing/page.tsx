@@ -48,6 +48,7 @@ function PricingContent() {
       checkoutUrl: '/api/checkout/pro',
       trialDays: 14,
       highlight: false,
+      popular: true,
     },
     {
       id: 'business',
@@ -230,30 +231,39 @@ function PricingContent() {
             {plans.map((plan) => (
               <div
                 key={plan.id}
-                className={`rounded-xl shadow-lg p-6 border-2 flex flex-col transition-all hover:shadow-xl ${
+                className={`rounded-xl shadow-lg p-6 border-2 flex flex-col transition-all hover:shadow-xl relative ${
                   plan.highlight 
                     ? 'border-gray-800 bg-gray-900 text-white' 
+                    : (plan as any).popular
+                    ? 'border-gray-900 bg-[rgb(17,24,39)] hover:border-gray-900 shadow-2xl scale-105 md:scale-105 lg:scale-110 z-10 ring-4 ring-gray-900/10'
                     : 'border-gray-200 bg-white hover:border-gray-300'
                 }`}
               >
-                <h2 className={`text-2xl font-black mb-2 ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>
+                {(plan as any).popular && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-20">
+                    <span className="bg-gray-900 text-white text-xs font-bold px-4 py-1.5 rounded-full shadow-lg">
+                      POPULAR
+                    </span>
+                  </div>
+                )}
+                <h2 className={`text-2xl font-black mb-2 ${plan.highlight || (plan as any).popular ? 'text-white' : 'text-gray-900'}`}>
                   {plan.name}
                 </h2>
                 
                 <div className="mb-6">
                   {plan.id !== 'enterprise' ? (
                     <>
-                      <div className={`text-4xl font-black mb-1 ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>
+                      <div className={`text-4xl font-black mb-1 ${plan.highlight || (plan as any).popular ? 'text-white' : 'text-gray-900'}`}>
                         {plan.price}
                       </div>
                       {plan.priceNote && (
-                        <div className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>
+                        <div className={`text-sm ${plan.highlight || (plan as any).popular ? 'text-gray-200' : 'text-gray-600'}`}>
                           {plan.priceNote}
                         </div>
                       )}
                     </>
                   ) : (
-                    <div className={`text-lg font-semibold ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>
+                    <div className={`text-lg font-semibold ${plan.highlight || (plan as any).popular ? 'text-gray-200' : 'text-gray-600'}`}>
                       Custom pricing for your needs
                     </div>
                   )}
@@ -261,16 +271,16 @@ function PricingContent() {
                   {/* Plan Details */}
                   <div className="space-y-3 mb-6">
                     <div className="flex items-center justify-between">
-                      <span className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>Videos per month</span>
-                      <span className={`font-bold ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>{plan.videosPerMonth}</span>
+                      <span className={`text-sm ${plan.highlight || (plan as any).popular ? 'text-gray-200' : 'text-gray-600'}`}>Videos per month</span>
+                      <span className={`font-bold ${plan.highlight || (plan as any).popular ? 'text-white' : 'text-gray-900'}`}>{plan.videosPerMonth}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>Credits</span>
-                      <span className={`font-bold ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>{plan.credits.toLocaleString()}</span>
+                      <span className={`text-sm ${plan.highlight || (plan as any).popular ? 'text-gray-200' : 'text-gray-600'}`}>Credits</span>
+                      <span className={`font-bold ${plan.highlight || (plan as any).popular ? 'text-white' : 'text-gray-900'}`}>{plan.credits.toLocaleString()}</span>
                     </div>
                     <div className="flex items-center justify-between">
-                      <span className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-600'}`}>Series</span>
-                      <span className={`font-bold ${plan.highlight ? 'text-white' : 'text-gray-900'}`}>{plan.series}</span>
+                      <span className={`text-sm ${plan.highlight || (plan as any).popular ? 'text-gray-200' : 'text-gray-600'}`}>Series</span>
+                      <span className={`font-bold ${plan.highlight || (plan as any).popular ? 'text-white' : 'text-gray-900'}`}>{plan.series}</span>
                     </div>
                   </div>
                 </div>
@@ -281,11 +291,11 @@ function PricingContent() {
                     {features.map((feature, index) => (
                       <div key={index} className="flex items-center gap-2">
                         <span className={`material-symbols-outlined text-lg ${
-                          plan.highlight ? 'text-gray-400' : 'text-gray-500'
+                          plan.highlight || (plan as any).popular ? 'text-gray-300' : 'text-gray-500'
                         }`}>
                           check_circle
                         </span>
-                        <span className={`text-sm ${plan.highlight ? 'text-gray-300' : 'text-gray-700'}`}>
+                        <span className={`text-sm ${plan.highlight || (plan as any).popular ? 'text-gray-200' : 'text-gray-700'}`}>
                           {feature}
                         </span>
                       </div>
@@ -296,10 +306,10 @@ function PricingContent() {
                 {/* Trial Info */}
                 {plan.trialDays && (
                   <div className={`mb-4 p-3 rounded-lg ${
-                    plan.highlight ? 'bg-gray-800' : 'bg-green-50'
+                    plan.highlight || (plan as any).popular ? 'bg-gray-600' : 'bg-green-50'
                   }`}>
                     <p className={`text-xs font-semibold ${
-                      plan.highlight ? 'text-green-400' : 'text-green-700'
+                      plan.highlight || (plan as any).popular ? 'text-green-300' : 'text-green-700'
                     }`}>
                       {plan.trialDays}-day free trial
                     </p>
@@ -309,7 +319,7 @@ function PricingContent() {
                 <Button
                   onClick={() => plan.id !== 'enterprise' ? handleCheckout(plan.id, plan.checkoutUrl) : router.push('/contact')}
                   className={`w-full h-12 font-bold transition-all hover:scale-105 no-underline ${
-                    plan.highlight
+                    plan.highlight || (plan as any).popular
                       ? 'bg-white text-gray-900 hover:bg-gray-100'
                       : plan.id === 'enterprise'
                       ? 'bg-gray-700 text-white hover:bg-gray-600'
