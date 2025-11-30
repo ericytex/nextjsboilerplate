@@ -3,6 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useEffect, useState } from "react"
+import { ArrowRight, PlayCircle, Star, Play, Edit, Sparkles, Settings, Upload, CheckCircle2, VideoOff, TrendingUp, Palette, Music, Mic } from "lucide-react"
 
 export default function Home() {
   const [isVisible, setIsVisible] = useState(false)
@@ -91,12 +92,12 @@ export default function Home() {
               <Button asChild className="h-12 px-8 bg-yellow-DEFAULT text-gray-900 text-base font-bold hover:bg-yellow-dark hover:scale-105 transition-all shadow-lg hover:shadow-xl no-underline group">
                 <Link href="/signup" className="no-underline flex items-center gap-2">
                   Start Free Trial
-                  <span className="material-symbols-outlined text-xl group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                  <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                 </Link>
               </Button>
                 <Button asChild variant="outline" className="h-12 px-6 bg-white border-2 border-gray-300 text-gray-900 text-base font-bold hover:bg-gray-50 hover:border-gray-400 transition-all no-underline">
                   <Link href="#demo" className="no-underline flex items-center gap-2">
-                    <span className="material-symbols-outlined">play_circle</span>
+                    <PlayCircle className="w-5 h-5" />
                     Watch Demo
                   </Link>
                 </Button>
@@ -119,7 +120,7 @@ export default function Home() {
                 <div className="flex items-center gap-2">
                   <div className="flex gap-0.5">
                     {[1, 2, 3, 4, 5].map((i) => (
-                      <span key={i} className="material-symbols-outlined text-yellow-DEFAULT text-sm fill-yellow-DEFAULT">star</span>
+                      <Star key={i} className="w-4 h-4 text-yellow-DEFAULT fill-yellow-DEFAULT" />
                     ))}
                   </div>
                   <span className="text-sm font-semibold text-gray-700">Trusted by 27,000+ creators</span>
@@ -137,7 +138,7 @@ export default function Home() {
                     <div className="text-xs drop-shadow-md">2.5M views • 45K likes</div>
                   </div>
                   <div className="absolute top-4 right-4 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-white text-xl">play_circle</span>
+                    <PlayCircle className="w-6 h-6 text-white" />
                   </div>
                 </div>
               </div>
@@ -150,7 +151,7 @@ export default function Home() {
                     <div className="text-xs drop-shadow-md">1.8M views • 120K likes</div>
                   </div>
                   <div className="absolute top-4 right-4 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-white text-xl">play_circle</span>
+                    <PlayCircle className="w-6 h-6 text-white" />
                   </div>
                 </div>
               </div>
@@ -163,7 +164,7 @@ export default function Home() {
                     <div className="text-xs drop-shadow-md">950K views • 35K likes</div>
                   </div>
                   <div className="absolute top-4 right-4 w-12 h-12 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center">
-                    <span className="material-symbols-outlined text-white text-xl">play_circle</span>
+                    <PlayCircle className="w-6 h-6 text-white" />
                   </div>
                 </div>
               </div>
@@ -180,33 +181,36 @@ export default function Home() {
               
               {/* Demo Video Placeholder */}
               <div className="relative bg-gray-900 rounded-2xl overflow-hidden aspect-video mb-8 shadow-2xl">
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <div className="text-center text-white">
-                    <button className="w-20 h-20 bg-yellow-DEFAULT rounded-full flex items-center justify-center mb-4 hover:scale-110 transition-transform">
-                      <span className="material-symbols-outlined text-gray-900 text-4xl">play_arrow</span>
-                    </button>
-                    <p className="text-gray-300">Demo Video: From Prompt to Published</p>
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="text-center text-white">
+                      <button className="w-20 h-20 bg-yellow-DEFAULT rounded-full flex items-center justify-center mb-4 hover:scale-110 transition-transform">
+                        <Play className="w-10 h-10 text-gray-900" />
+                      </button>
+                      <p className="text-gray-300">Demo Video: From Prompt to Published</p>
+                    </div>
                   </div>
-                </div>
               </div>
 
               {/* Interactive Workflow Preview */}
               <div className="grid md:grid-cols-4 gap-4">
                 {[
-                  { step: '1', title: 'Enter Prompt', desc: 'Describe your video idea', icon: 'edit' },
-                  { step: '2', title: 'AI Generates', desc: 'Script, visuals, voice', icon: 'auto_awesome' },
-                  { step: '3', title: 'Customize', desc: 'Style, voice, music', icon: 'tune' },
-                  { step: '4', title: 'Auto-Publish', desc: 'To all platforms', icon: 'publish' }
-                ].map((item, index) => (
+                  { step: '1', title: 'Enter Prompt', desc: 'Describe your video idea', icon: Edit },
+                  { step: '2', title: 'AI Generates', desc: 'Script, visuals, voice', icon: Sparkles },
+                  { step: '3', title: 'Customize', desc: 'Style, voice, music', icon: Settings },
+                  { step: '4', title: 'Auto-Publish', desc: 'To all platforms', icon: Upload }
+                ].map((item, index) => {
+                  const IconComponent = item.icon
+                  return (
                   <div key={index} className="bg-white p-6 rounded-xl border-2 border-gray-200 hover:border-yellow-DEFAULT transition-all hover:shadow-lg text-center">
                     <div className="w-12 h-12 bg-yellow-DEFAULT rounded-full flex items-center justify-center mx-auto mb-4">
-                      <span className="material-symbols-outlined text-gray-900">{item.icon}</span>
+                      <IconComponent className="w-6 h-6 text-gray-900" />
                     </div>
                     <div className="text-2xl font-black text-gray-900 mb-2">{item.step}</div>
                     <h3 className="font-bold text-gray-900 mb-1">{item.title}</h3>
                     <p className="text-sm text-gray-600">{item.desc}</p>
                   </div>
-                ))}
+                  )
+                })}
               </div>
             </div>
           </section>
@@ -222,7 +226,7 @@ export default function Home() {
               {/* AI-Generated Scripts */}
               <div className="bg-white p-8 rounded-2xl border-2 border-gray-200 hover:border-yellow-DEFAULT hover:shadow-xl transition-all">
                 <div className="w-16 h-16 bg-yellow-light rounded-xl flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-yellow-DEFAULT text-3xl">auto_awesome</span>
+                  <Sparkles className="w-8 h-8 text-yellow-DEFAULT" />
                 </div>
                 <h3 className="text-2xl font-black text-gray-900 mb-3">AI-Generated Scripts</h3>
                 <p className="text-gray-600 leading-relaxed">Our AI writes engaging, viral-worthy scripts based on your topic. No writing skills needed—just describe your idea.</p>
@@ -231,7 +235,7 @@ export default function Home() {
               {/* Customizable Video Styles */}
               <div className="bg-white p-8 rounded-2xl border-2 border-gray-200 hover:border-yellow-DEFAULT hover:shadow-xl transition-all">
                 <div className="w-16 h-16 bg-yellow-light rounded-xl flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-yellow-DEFAULT text-3xl">palette</span>
+                  <Palette className="w-8 h-8 text-yellow-DEFAULT" />
                 </div>
                 <h3 className="text-2xl font-black text-gray-900 mb-3">Customizable Video Styles</h3>
                 <p className="text-gray-600 leading-relaxed mb-4">Choose from multiple visual styles:</p>
@@ -240,13 +244,12 @@ export default function Home() {
                     <button
                       key={style.id}
                       onClick={() => setSelectedStyle(style.id)}
-                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                      className={`px-4 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1 ${
                         selectedStyle === style.id
                           ? 'bg-yellow-DEFAULT text-gray-900'
                           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                       }`}
                     >
-                      <span className="material-symbols-outlined text-sm mr-1">{style.icon}</span>
                       {style.name}
                     </button>
                   ))}
@@ -256,7 +259,7 @@ export default function Home() {
               {/* AI Voiceovers */}
               <div className="bg-white p-8 rounded-2xl border-2 border-gray-200 hover:border-yellow-DEFAULT hover:shadow-xl transition-all">
                 <div className="w-16 h-16 bg-yellow-light rounded-xl flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-yellow-DEFAULT text-3xl">record_voice_over</span>
+                  <Mic className="w-8 h-8 text-yellow-DEFAULT" />
                 </div>
                 <h3 className="text-2xl font-black text-gray-900 mb-3">AI Voiceovers</h3>
                 <p className="text-gray-600 leading-relaxed mb-4">Natural-sounding voices in multiple accents. Preview samples:</p>
@@ -272,7 +275,7 @@ export default function Home() {
                       }`}
                     >
                       <span>{voice.name}</span>
-                      <span className="material-symbols-outlined text-lg">play_circle</span>
+                      <PlayCircle className="w-5 h-5" />
                     </button>
                   ))}
                 </div>
@@ -281,7 +284,7 @@ export default function Home() {
               {/* Background Music Library */}
               <div className="bg-white p-8 rounded-2xl border-2 border-gray-200 hover:border-yellow-DEFAULT hover:shadow-xl transition-all">
                 <div className="w-16 h-16 bg-yellow-light rounded-xl flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-yellow-DEFAULT text-3xl">library_music</span>
+                  <Music className="w-8 h-8 text-yellow-DEFAULT" />
                 </div>
                 <h3 className="text-2xl font-black text-gray-900 mb-3">Background Music Library</h3>
                 <p className="text-gray-600 leading-relaxed">Thousands of royalty-free tracks. Choose by mood, genre, or tempo. Perfect for every video type.</p>
@@ -290,14 +293,14 @@ export default function Home() {
               {/* Auto-Publishing */}
               <div className="bg-white p-8 rounded-2xl border-2 border-gray-200 hover:border-yellow-DEFAULT hover:shadow-xl transition-all">
                 <div className="w-16 h-16 bg-yellow-light rounded-xl flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-yellow-DEFAULT text-3xl">publish</span>
+                  <Upload className="w-8 h-8 text-yellow-DEFAULT" />
                 </div>
                 <h3 className="text-2xl font-black text-gray-900 mb-3">Auto-Publish to Platforms</h3>
                 <p className="text-gray-600 leading-relaxed mb-4">One-click publishing to:</p>
                 <div className="flex gap-3">
                   {['YouTube Shorts', 'TikTok', 'Instagram Reels'].map((platform) => (
                     <div key={platform} className="flex items-center gap-2 px-3 py-2 bg-gray-100 rounded-lg">
-                      <span className="material-symbols-outlined text-sm">check_circle</span>
+                      <CheckCircle2 className="w-4 h-4" />
                       <span className="text-sm font-medium">{platform}</span>
                     </div>
                   ))}
@@ -307,7 +310,7 @@ export default function Home() {
               {/* No Recording Needed */}
               <div className="bg-white p-8 rounded-2xl border-2 border-gray-200 hover:border-yellow-DEFAULT hover:shadow-xl transition-all">
                 <div className="w-16 h-16 bg-yellow-light rounded-xl flex items-center justify-center mb-6">
-                  <span className="material-symbols-outlined text-yellow-DEFAULT text-3xl">videocam_off</span>
+                  <VideoOff className="w-8 h-8 text-yellow-DEFAULT" />
                 </div>
                 <h3 className="text-2xl font-black text-gray-900 mb-3">100% Faceless</h3>
                 <p className="text-gray-600 leading-relaxed">No camera, no recording, no editing. Everything is AI-generated. Perfect for creators who want to stay anonymous.</p>
@@ -362,7 +365,7 @@ export default function Home() {
                   </div>
                   <p className="text-gray-700 mb-4 leading-relaxed">&quot;{testimonial.quote}&quot;</p>
                   <div className="flex items-center gap-2 text-sm font-semibold text-yellow-DEFAULT">
-                    <span className="material-symbols-outlined text-lg">trending_up</span>
+                    <TrendingUp className="w-5 h-5" />
                     {testimonial.stats}
                   </div>
                 </div>
@@ -416,7 +419,7 @@ export default function Home() {
                   <p className="text-gray-600 text-sm leading-relaxed">{article.desc}</p>
                   <div className="flex items-center gap-2 mt-4 text-yellow-DEFAULT font-semibold text-sm">
                     Read more
-                    <span className="material-symbols-outlined text-lg group-hover:translate-x-1 transition-transform">arrow_forward</span>
+                    <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
                   </div>
                 </Link>
               ))}
