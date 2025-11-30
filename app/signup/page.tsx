@@ -26,6 +26,7 @@ function SignupForm() {
   // Check database setup status on mount
   useEffect(() => {
     checkDatabaseSetup()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Pre-fill email from query params if redirected from signin

@@ -43,6 +43,7 @@ export default function SetupPage() {
   useEffect(() => {
     loadEnvVars()
     checkSetupStatus()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const loadEnvVars = async () => {

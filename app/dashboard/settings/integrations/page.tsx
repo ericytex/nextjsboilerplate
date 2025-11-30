@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useCallback } from 'react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -87,67 +87,31 @@ export default function IntegrationsPage() {
 
   const creemEnvVarsLoadedRef = useRef(false)
 
-  useEffect(() => {
-    loadIntegrations()
-  }, [])
-
-  useEffect(() => {
-    // Load Creem env vars once after integrations are loaded
-    if (!loading && integrations.length > 0 && !creemEnvVarsLoadedRef.current) {
-      creemEnvVarsLoadedRef.current = true
-      loadCreemEnvVars()
-    }
-  }, [loading, integrations.length])
-
-  const loadCreemEnvVars = async () => {
+  const loadIntegrations = useCallback(async () => {
     try {
-      const response = await fetch('/api/setup/creem-env-vars', {
-        cache: 'no-store',
-        headers: { 'Cache-Control': 'no-cache' }
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        
-        if (data.hasApiKey) {
-          // Find Creem integration and update it
-          setIntegrations(prev => prev.map(integration => {
-            if (integration.id === 'creem') {
-              const updatedConfig = {
-                ...integration.config,
-                apiKey: '••••••••••••', // Show masked value to indicate it's set
-                customSettings: {
-                  ...integration.config.customSettings,
-                  // We can't show the actual key, but we can indicate it exists
-                }
-              }
-              
-              // Auto-enable if env vars exist
-              if (!integration.config.enabled) {
-                updatedConfig.enabled = true
-              }
-              
-              return { ...integration, config: updatedConfig }
-            }
-            return integration
-          }))
-          
-          toast.info('Creem.io environment variables detected', {
-            description: 'Found CREEM_API_KEY in .env.local. Auto-testing connection...'
-          })
-          
-          // Auto-test after a short delay
-          setTimeout(() => {
-            testCreemConnection()
-          }, 2000)
-        }
+      const response = await fetch('/api/settings/integrations')
+      const data = await response.json()
+      // Always use default integrations if API returns empty or no integrations
+      const defaultIntegrations = getDefaultIntegrations()
+      if (data.integrations && Array.isArray(data.integrations) && data.integrations.length > 0) {
+        // Merge API data with defaults, keeping API configs where they exist
+        const merged = defaultIntegrations.map(defaultInt => {
+          const apiInt = data.integrations.find((api: any) => api.id === defaultInt.id)
+          return apiInt ? { ...defaultInt, config: apiInt.config || defaultInt.config } : defaultInt
+        })
+        setIntegrations(merged)
+      } else {
+        setIntegrations(defaultIntegrations)
       }
     } catch (error) {
-      console.error('Failed to load Creem env vars:', error)
+      console.error('Failed to load integrations:', error)
+      setIntegrations(getDefaultIntegrations())
+    } finally {
+      setLoading(false)
     }
-  }
+  }, [])
 
-  const testCreemConnection = async () => {
+  const testCreemConnection = useCallback(async () => {
     // Test by listing products (simple GET request)
     try {
       setCreemTestLoading('GET:/api/creem/products')
@@ -198,31 +162,67 @@ export default function IntegrationsPage() {
     } finally {
       setCreemTestLoading(null)
     }
-  }
+  }, [])
 
-  const loadIntegrations = async () => {
+  const loadCreemEnvVars = useCallback(async () => {
     try {
-      const response = await fetch('/api/settings/integrations')
-      const data = await response.json()
-      // Always use default integrations if API returns empty or no integrations
-      const defaultIntegrations = getDefaultIntegrations()
-      if (data.integrations && Array.isArray(data.integrations) && data.integrations.length > 0) {
-        // Merge API data with defaults, keeping API configs where they exist
-        const merged = defaultIntegrations.map(defaultInt => {
-          const apiInt = data.integrations.find((api: any) => api.id === defaultInt.id)
-          return apiInt ? { ...defaultInt, config: apiInt.config || defaultInt.config } : defaultInt
-        })
-        setIntegrations(merged)
-      } else {
-        setIntegrations(defaultIntegrations)
+      const response = await fetch('/api/setup/creem-env-vars', {
+        cache: 'no-store',
+        headers: { 'Cache-Control': 'no-cache' }
+      })
+      
+      if (response.ok) {
+        const data = await response.json()
+        
+        if (data.hasApiKey) {
+          // Find Creem integration and update it
+          setIntegrations(prev => prev.map(integration => {
+            if (integration.id === 'creem') {
+              const updatedConfig = {
+                ...integration.config,
+                apiKey: '••••••••••••', // Show masked value to indicate it's set
+                customSettings: {
+                  ...integration.config.customSettings,
+                  // We can't show the actual key, but we can indicate it exists
+                }
+              }
+              
+              // Auto-enable if env vars exist
+              if (!integration.config.enabled) {
+                updatedConfig.enabled = true
+              }
+              
+              return { ...integration, config: updatedConfig }
+            }
+            return integration
+          }))
+          
+          toast.info('Creem.io environment variables detected', {
+            description: 'Found CREEM_API_KEY in .env.local. Auto-testing connection...'
+          })
+          
+          // Auto-test after a short delay
+          setTimeout(() => {
+            testCreemConnection()
+          }, 2000)
+        }
       }
     } catch (error) {
-      console.error('Failed to load integrations:', error)
-      setIntegrations(getDefaultIntegrations())
-    } finally {
-      setLoading(false)
+      console.error('Failed to load Creem env vars:', error)
     }
-  }
+  }, [testCreemConnection])
+
+  useEffect(() => {
+    loadIntegrations()
+  }, [loadIntegrations])
+
+  useEffect(() => {
+    // Load Creem env vars once after integrations are loaded
+    if (!loading && integrations.length > 0 && !creemEnvVarsLoadedRef.current) {
+      creemEnvVarsLoadedRef.current = true
+      loadCreemEnvVars()
+    }
+  }, [loading, integrations.length, loadCreemEnvVars])
 
   const getDefaultIntegrations = (): Integration[] => [
     {

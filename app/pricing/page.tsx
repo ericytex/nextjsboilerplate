@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useEffect, Suspense, useState } from 'react'
+import { useEffect, Suspense, useState, useCallback } from 'react'
 
 function PricingContent() {
   const router = useRouter()
@@ -11,6 +11,47 @@ function PricingContent() {
   const trial = searchParams.get('trial') === 'true'
   const planParam = searchParams.get('plan')
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
+
+  const handleCheckout = useCallback(async (planId: string, checkoutUrl: string) => {
+    if (planId === 'enterprise') {
+      router.push(checkoutUrl)
+      return
+    }
+
+    try {
+      const response = await fetch(checkoutUrl)
+      const data = await response.json()
+      
+      // Check for errors from API
+      if (data.error || !data.url) {
+        alert(data.error || 'Checkout URL is not configured. Please set the environment variable in Vercel.')
+        return
+      }
+      
+      // Validate URL is not a placeholder
+      const placeholderPatterns = [
+        'test-link',
+        'placeholder',
+        'your-actual',
+        'example.com'
+      ]
+      
+      const isPlaceholder = placeholderPatterns.some(pattern => 
+        data.url.toLowerCase().includes(pattern)
+      )
+      
+      if (isPlaceholder) {
+        alert('Checkout URL is not configured. Please set the environment variable in Vercel.')
+        return
+      }
+      
+      // Redirect to checkout URL
+      window.location.href = data.url
+    } catch (error) {
+      console.error('Checkout error:', error)
+      alert('Failed to initiate checkout. Please try again.')
+    }
+  }, [router])
 
   useEffect(() => {
     // If trial=true and plan=basic, auto-trigger checkout
@@ -20,7 +61,7 @@ function PricingContent() {
       }, 500) // Small delay for better UX
       return () => clearTimeout(timer)
     }
-  }, [trial, planParam])
+  }, [trial, planParam, handleCheckout])
 
   const plans = [
     {
@@ -85,49 +126,6 @@ function PricingContent() {
     'No watermark',
     'Auto-publish on TikTok and Youtube'
   ]
-
-  const handleCheckout = async (planId: string, checkoutUrl: string) => {
-    if (planId === 'enterprise') {
-      router.push(checkoutUrl)
-      return
-    }
-
-    try {
-      const response = await fetch(checkoutUrl)
-      const data = await response.json()
-      
-      // Check for errors from API
-      if (data.error || !data.url) {
-        alert(data.error || 'Checkout URL is not configured. Please set the environment variable in Vercel.')
-        return
-      }
-      
-      // Validate URL is not a placeholder
-      const placeholderPatterns = [
-        'test-link',
-        'placeholder',
-        'your-actual',
-        'your-',
-        'example',
-        'demo'
-      ]
-      
-      const isPlaceholder = placeholderPatterns.some(pattern => 
-        data.url.toLowerCase().includes(pattern)
-      )
-      
-      if (isPlaceholder) {
-        alert('Checkout URL appears to be a placeholder. Please set the actual Creem.io checkout URL in Vercel environment variables.')
-        return
-      }
-      
-      // Redirect to checkout
-      window.location.href = data.url
-    } catch (error) {
-      console.error('Checkout error:', error)
-      alert('Error initiating checkout. Please try again.')
-    }
-  }
 
   return (
     <div className="relative flex min-h-screen w-full flex-col bg-white overflow-x-hidden" style={{
